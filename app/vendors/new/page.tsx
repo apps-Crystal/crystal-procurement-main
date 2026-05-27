@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const SITES = ['Noida', 'Dhulagarh', 'Dankuni', 'Bhubaneswar', 'Pune', 'HO / Kolkata', 'Detroj', 'Kheda', 'New Mumbai', 'New Ahmedabad', 'CLCC'];
+const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Ahmedabad', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

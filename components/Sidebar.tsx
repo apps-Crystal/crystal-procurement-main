@@ -18,16 +18,17 @@ function titleCase(s: string): string {
 const SITES = [
   { label: 'All Sites', value: 'all' },
   { label: 'Noida', value: 'Noida' },
+  { label: 'Detroj', value: 'Detroj' },
+  { label: 'Pune', value: 'Pune' },
+  { label: 'Kheda', value: 'Kheda' },
+  { label: 'Kolkata', value: 'Kolkata' },
+  { label: 'Ahmedabad', value: 'Ahmedabad' },
+  { label: 'Bhubaneswar', value: 'Bhubaneswar' },
   { label: 'Dhulagarh', value: 'Dhulagarh' },
   { label: 'Dankuni', value: 'Dankuni' },
-  { label: 'Bhubaneswar', value: 'Bhubaneswar' },
-  { label: 'Pune', value: 'Pune' },
-  { label: 'HO / Kolkata', value: 'HO / Kolkata' },
-  { label: 'Detroj', value: 'Detroj' },
-  { label: 'Kheda', value: 'Kheda' },
-  { label: 'New Mumbai', value: 'New Mumbai' },
-  { label: 'New Ahmedabad', value: 'New Ahmedabad' },
-  { label: 'CLCC', value: 'CLCC' },
+  { label: 'Mumbai', value: 'Mumbai' },
+  { label: 'Vavdi', value: 'Vavdi' },
+  { label: 'Taloja', value: 'Taloja' },
 ];
 
 const nav = [
