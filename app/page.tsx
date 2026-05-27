@@ -34,7 +34,11 @@ export default function Dashboard() {
     setLoading(true);
     const params = site && site !== 'all' ? `?site=${encodeURIComponent(site)}` : '';
     fetch(`/api/dashboard${params}`)
-      .then(r => r.json())
+      .then(async r => {
+        const d = await r.json();
+        if (!r.ok || d?.error) throw new Error(d?.error || `Request failed (${r.status})`);
+        return d;
+      })
       .then(d => { setData(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
   }, [site]);

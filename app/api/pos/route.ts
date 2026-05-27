@@ -117,15 +117,15 @@ export async function POST(req: NextRequest) {
 
     // Update PR status to PO_POSTED
     const prRows = await readSheet('PR_Master');
-    const headers = prRows[0];
+    const prHeaders = prRows[0];
     const { findRowIndex, updateRow } = await import('@/lib/sheets');
-    const rowIdx = findRowIndex(prRows, headers.indexOf('PR_ID'), pr_id);
+    const rowIdx = findRowIndex(prRows, prHeaders.indexOf('PR_ID'), pr_id);
     if (rowIdx > 0) {
       const row = prRows[rowIdx - 1];
-      row[headers.indexOf('Status_Code')] = 'PO_POSTED';
-      row[headers.indexOf('Status_Label')] = 'PO Posted';
-      row[headers.indexOf('Last_Action_By')] = created_by;
-      row[headers.indexOf('Last_Action_At')] = timestamp;
+      row[prHeaders.indexOf('Status_Code')] = 'PO_POSTED';
+      row[prHeaders.indexOf('Status_Label')] = 'PO Posted';
+      row[prHeaders.indexOf('Last_Action_By')] = created_by;
+      row[prHeaders.indexOf('Last_Action_At')] = timestamp;
       await updateRow(`PR_Master!A${rowIdx}`, row);
     }
 
