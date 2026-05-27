@@ -1,0 +1,368 @@
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+const SITES = ['Noida', 'Dhulagarh', 'Dankuni', 'Bhubaneswar', 'Pune', 'HO / Kolkata', 'Detroj', 'Kheda', 'New Mumbai', 'New Ahmedabad', 'CLCC'];
+const CATEGORIES = ['Civil', 'Electrical', 'Mechanical', 'IT & Telecom', 'Housekeeping', 'Security', 'Canteen', 'AMC / Service', 'Furniture', 'Stationery', 'Other'];
+const PROC_TYPES = ['Goods', 'Services', 'Works'];
+
+let _itemId = 0;
+function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
+const EMPTY_ITEM = { item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' };
+
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{title}</div>
+      {children}
+    </div>
+  );
+}
+export default function NewPR() {
+  const router = useRouter();
+
+  const [form, setForm] = useState({
+    site: '',
+    category: '',
+    procurement_type: 'Goods',
+    vendor_id: '',
+    pr_purpose: '',
+    payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '',
+    delivery_terms: '',
+    delivery_location: '',
+    expected_delivery_date: '',
+    is_reimbursable: 'No',
+    requisition_by: '',
+    warranty_amc: '',
+    requested_by: 'Yatish Agarwal',
+  });
+  const [items, setItems] = useState([newItem()]);
+  const [vendorSearch, setVendorSearch] = useState('');
+  const [vendorResults, setVendorResults] = useState<any[]>([]);
+  const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Vendor search debounce
+  useEffect(() => {
+    if (!vendorSearch || vendorSearch.length < 2) { setVendorResults([]); return; }
+    const t = setTimeout(() => {
+      fetch(`/api/vendors?search=${encodeURIComponent(vendorSearch)}`)
+        .then(r => r.json())
+        .then(d => setVendorResults((d.vendors || []).slice(0, 8)));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [vendorSearch]);
+
+  function set(field: string, value: string) {
+    setForm(p => ({ ...p, [field]: value }));
+  }
+
+  function setItem(idx: number, field: string, value: string) {
+    setItems(p => p.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+  }
+
+  function addItem() { setItems(p => [...p, newItem()]); }
+  function removeItem(idx: number) { setItems(p => p.filter((_, i) => i !== idx)); }
+
+  function lineTotal(item: typeof EMPTY_ITEM) {
+    const qty = parseFloat(item.qty) || 0;
+    const rate = parseFloat(item.rate) || 0;
+    const gst = parseFloat(item.gst) || 0;
+    return qty * rate * (1 + gst / 100);
+  }
+
+  const grandTotal = items.reduce((s, it) => s + lineTotal(it), 0);
+
+  function paymentSummary() {
+    const parts = [
+      form.payment_adv ? `Advance: ${form.payment_adv}%` : null,
+      form.payment_before ? `Before Delivery: ${form.payment_before}%` : null,
+      form.payment_running ? `Running: ${form.payment_running}%` : null,
+      form.payment_postdel ? `Post Delivery: ${form.payment_postdel}%` : null,
+      form.payment_postcomp ? `Post Completion: ${form.payment_postcomp}%` : null,
+    ].filter(Boolean);
+    return parts.join(' | ');
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.site) { setError('Please select a site'); return; }
+    if (!form.category) { setError('Please select a category'); return; }
+    if (!items[0].item_name) { setError('At least one item is required'); return; }
+    setSaving(true);
+    setError('');
+
+    const res = await fetch('/api/prs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        site: form.site,
+        category: form.category,
+        procurement_type: form.procurement_type,
+        vendor_id: form.vendor_id,
+        purpose: form.pr_purpose,
+        payment_stages: {
+          Advance: form.payment_adv,
+          'Before Delivery': form.payment_before,
+          Running: form.payment_running,
+          'Post Delivery': form.payment_postdel,
+          'Post Completion': form.payment_postcomp,
+        },
+        delivery_terms: form.delivery_terms,
+        delivery_location: form.delivery_location,
+        expected_delivery: form.expected_delivery_date,
+        is_reimbursable: form.is_reimbursable,
+        requisitioned_by: form.requisition_by,
+        warranty_amc: form.warranty_amc,
+        raised_by: form.requested_by,
+        items: items.filter(it => it.item_name.trim()).map((it, i) => ({
+          line_no: i + 1,
+          name: it.item_name,
+          purpose: it.purpose,
+          qty: it.qty,
+          uom: it.uom,
+          rate: it.rate,
+          gst: it.gst,
+          line_total: lineTotal(it).toFixed(2),
+        })),
+      }),
+    });
+    const data = await res.json();
+    if (data.error) { setError(data.error); setSaving(false); return; }
+    router.push(`/prs/${encodeURIComponent(data.pr_id)}`);
+  }
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 flex items-center justify-between sticky top-0 z-10">
+        <Link href="/prs" className="text-sm text-gray-400 hover:text-gray-600">← Purchase Requests</Link>
+        <div className="font-semibold text-gray-800">New Purchase Request</div>
+        <div />
+      </div>
+
+      <form onSubmit={submit} className="px-4 py-4 md:px-7 md:py-6 space-y-4 max-w-5xl">
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
+
+        <Section title="Request Details">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Site <span className="text-red-400">*</span></label>
+              <select value={form.site} onChange={e => set('site', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+                <option value="">Select site...</option>
+                {SITES.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Category <span className="text-red-400">*</span></label>
+              <select value={form.category} onChange={e => set('category', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+                <option value="">Select category...</option>
+                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Procurement Type</label>
+              <select value={form.procurement_type} onChange={e => set('procurement_type', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+                {PROC_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="col-span-1 sm:col-span-2 lg:col-span-3">
+              <label className="block text-xs text-gray-500 mb-1">Purpose / Description</label>
+              <textarea value={form.pr_purpose} onChange={e => set('pr_purpose', e.target.value)} rows={2}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300 resize-none"
+                placeholder="Brief description of what is needed and why..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Expected Delivery Date</label>
+              <input type="date" value={form.expected_delivery_date} onChange={e => set('expected_delivery_date', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Delivery Location</label>
+              <input value={form.delivery_location} onChange={e => set('delivery_location', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="Store / Floor / Block..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Customer Reimbursable?</label>
+              <select value={form.is_reimbursable} onChange={e => set('is_reimbursable', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Delivery Terms</label>
+              <input value={form.delivery_terms} onChange={e => set('delivery_terms', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="FOR Destination / Ex-Works..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Requisitioned By</label>
+              <input value={form.requisition_by} onChange={e => set('requisition_by', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="Department / Person" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Warranty / AMC</label>
+              <input value={form.warranty_amc} onChange={e => set('warranty_amc', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="1 year / 2 year AMC..." />
+            </div>
+          </div>
+        </Section>
+
+        {/* Vendor */}
+        <Section title="Vendor (Optional — can assign later)">
+          <div className="relative">
+            <input value={selectedVendor ? `${selectedVendor.Company_Name} (${selectedVendor.Vendor_ID})` : vendorSearch}
+              onChange={e => { setVendorSearch(e.target.value); setSelectedVendor(null); set('vendor_id', ''); }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:border-indigo-300"
+              placeholder="Search vendor by name, GST, ID..." />
+            {vendorResults.length > 0 && !selectedVendor && (
+              <div className="absolute top-full left-0 mt-1 w-96 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+                {vendorResults.map(v => (
+                  <button type="button" key={v.Vendor_ID} onClick={() => { setSelectedVendor(v); set('vendor_id', v.Vendor_ID); setVendorSearch(''); setVendorResults([]); }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 text-left">
+                    <div>
+                      <div className="text-sm font-medium">{v.Company_Name}</div>
+                      <div className="text-xs text-gray-400">{v.Vendor_ID} · {v.GST_Number || 'No GST'}</div>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${v.kyc_status === 'complete' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{v.kyc_label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedVendor && (
+              <button type="button" onClick={() => { setSelectedVendor(null); set('vendor_id', ''); }}
+                className="ml-2 text-xs text-gray-400 hover:text-gray-600">✕ Clear</button>
+            )}
+          </div>
+        </Section>
+
+        {/* Payment Terms */}
+        <Section title="Payment Terms">
+          <div className="text-xs text-gray-500 mb-3">Enter percentages for each stage (total should be 100%)</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              ['Advance', 'payment_adv'],
+              ['Before Delivery', 'payment_before'],
+              ['Running', 'payment_running'],
+              ['Post Delivery', 'payment_postdel'],
+              ['Post Completion', 'payment_postcomp'],
+            ].map(([label, field]) => (
+              <div key={field}>
+                <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                <div className="relative">
+                  <input type="number" min="0" max="100" value={(form as any)[field] || ''} onChange={e => set(field, e.target.value)}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300 pr-6"
+                    placeholder="0" />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {paymentSummary() && (
+            <div className="mt-2 text-xs text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">{paymentSummary()}</div>
+          )}
+        </Section>
+
+        {/* Line Items */}
+        <Section title="Line Items">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-xs text-gray-400">
+                  <th className="text-left pb-2">#</th>
+                  <th className="text-left pb-2 min-w-48">Item Name <span className="text-red-400">*</span></th>
+                  <th className="text-left pb-2 min-w-32">Purpose</th>
+                  <th className="text-right pb-2">Qty</th>
+                  <th className="text-left pb-2 pl-2 min-w-20">UOM</th>
+                  <th className="text-right pb-2 min-w-28">Rate (₹)</th>
+                  <th className="text-right pb-2">GST %</th>
+                  <th className="text-right pb-2 min-w-28">Total</th>
+                  <th className="pb-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, idx) => {
+                  const total = lineTotal(item);
+                  return (
+                    <tr key={item._id} className="border-b border-gray-50">
+                      <td className="py-2 text-gray-400 text-xs pr-2">{idx + 1}</td>
+                      <td className="py-2 pr-2">
+                        <input value={item.item_name} onChange={e => setItem(idx, 'item_name', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300"
+                          placeholder="Item description..." />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input value={item.purpose} onChange={e => setItem(idx, 'purpose', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300"
+                          placeholder="For..." />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input type="number" min="0" value={item.qty} onChange={e => setItem(idx, 'qty', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-20 text-right focus:outline-none focus:border-indigo-300" />
+                      </td>
+                      <td className="py-2 pr-2 pl-2">
+                        <input value={item.uom} onChange={e => setItem(idx, 'uom', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:border-indigo-300"
+                          placeholder="Nos/Kg/m..." />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input type="number" min="0" value={item.rate} onChange={e => setItem(idx, 'rate', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-32 text-right focus:outline-none focus:border-indigo-300" />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <select value={item.gst} onChange={e => setItem(idx, 'gst', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:border-indigo-300">
+                          {['0', '5', '12', '18', '28'].map(g => <option key={g}>{g}</option>)}
+                        </select>
+                      </td>
+                      <td className="py-2 text-right font-medium text-sm pr-2">
+                        {total > 0 ? `₹${total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
+                      </td>
+                      <td className="py-2">
+                        {items.length > 1 && (
+                          <button type="button" onClick={() => removeItem(idx)} className="text-gray-300 hover:text-red-400 text-lg leading-none">×</button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={9} className="pt-3">
+                    <button type="button" onClick={addItem}
+                      className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ Add Item</button>
+                  </td>
+                </tr>
+                <tr className="border-t-2 border-gray-200">
+                  <td colSpan={7} className="pt-3 text-right font-semibold text-sm">Grand Total (incl. GST)</td>
+                  <td className="pt-3 text-right font-bold text-base pr-2">
+                    {grandTotal > 0 ? `₹${grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </Section>
+
+        <div className="flex justify-end gap-3 pb-6">
+          <Link href="/prs" className="px-5 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</Link>
+          <button type="submit" disabled={saving}
+            className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">
+            {saving ? 'Submitting...' : 'Submit PR'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
