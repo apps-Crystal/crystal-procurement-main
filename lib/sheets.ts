@@ -125,7 +125,7 @@ export async function getNextId(entity: string, site: string, month: string): Pr
   }
 
   const key = `${entity}:${site}:${month}`;
-  const now = new Date().toLocaleString('en-IN');
+  const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   const colLetter = (idx: number) => String.fromCharCode(65 + idx);
 
   for (let i = 1; i < rows.length; i++) {

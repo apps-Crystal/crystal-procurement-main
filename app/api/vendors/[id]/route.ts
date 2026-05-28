@@ -81,7 +81,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (body[field] !== undefined) setCol(field, String(body[field]));
     }
 
-    setCol('Last_Updated', new Date().toLocaleString('en-IN'));
+    setCol('Last_Updated', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
 
     await updateRow(`Vendor_Master!A${rowIdx}`, row);
     return NextResponse.json({ success: true });

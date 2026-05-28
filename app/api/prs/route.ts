@@ -65,10 +65,11 @@ export async function POST(req: NextRequest) {
     const headers = existingRows.length > 0 ? existingRows[0] : [];
 
     const now = new Date();
-    const month = now.toLocaleString('default', { month: 'long' }) + now.getFullYear();
+    const month = now.toLocaleString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' })
+      + now.toLocaleString('en-IN', { year: 'numeric', timeZone: 'Asia/Kolkata' });
     const counter = await getNextId('PR', site, month);
     const pr_id = `PR-${site}-${month}/${counter}`;
-    const timestamp = now.toLocaleString('en-IN');
+    const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const paymentSummary = Object.entries(payment_stages || {})
       .filter(([, v]) => v)

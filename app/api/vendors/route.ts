@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       return num > max ? num : max;
     }, 0);
     const vendor_id = `V-${String(lastId + 1).padStart(4, '0')}`;
-    const now = new Date().toLocaleString('en-IN');
+    const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     // Check PAN duplicate
     const dupPAN = vendors.find(v => v.Vendor_PAN === pan && pan);

@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const approvedByCol = headers.indexOf('PR_Approved_By');
     const approvedAtCol = headers.indexOf('PR_Approved_DateTime');
 
-    const now = new Date().toLocaleString('en-IN');
+    const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const row = rows[rowIdx - 1];
 
     const statusMap: Record<string, [string, string]> = {

@@ -62,10 +62,11 @@ export async function POST(req: NextRequest) {
       items, created_by } = body;
 
     const now = new Date();
-    const month = now.toLocaleString('default', { month: 'long' }) + now.getFullYear();
+    const month = now.toLocaleString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' })
+      + now.toLocaleString('en-IN', { year: 'numeric', timeZone: 'Asia/Kolkata' });
     const counter = await getNextId('PO', site, month);
     const po_id = `PO-${site}-${month}/${counter}`;
-    const timestamp = now.toLocaleString('en-IN');
+    const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const totalIncGST = items?.reduce((sum: number, item: any) => {
       const rate = parseFloat(item.rate) || 0;

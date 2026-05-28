@@ -46,10 +46,11 @@ export async function POST(req: NextRequest) {
       lr_number, vehicle_number, items, created_by_email, created_by_name } = body;
 
     const now = new Date();
-    const month = now.toLocaleString('default', { month: 'long' }) + now.getFullYear();
+    const month = now.toLocaleString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' })
+      + now.toLocaleString('en-IN', { year: 'numeric', timeZone: 'Asia/Kolkata' });
     const counter = await getNextId('GRN', site, month);
     const grn_id = `GRN-${site}-${month}/${counter}`;
-    const timestamp = now.toLocaleString('en-IN');
+    const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     // Duplicate invoice check
     const existingGRNs = await readSheet('GRN_Master');

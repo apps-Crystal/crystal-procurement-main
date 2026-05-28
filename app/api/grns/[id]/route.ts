@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (rowIdx < 0) return NextResponse.json({ error: 'GRN not found' }, { status: 404 });
 
     const row = [...rows[rowIdx - 1]];
-    const now = new Date().toLocaleString('en-IN');
+    const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     function setCol(col: string, val: string) {
       const i = headers.indexOf(col);
