@@ -6,6 +6,7 @@ import Link from 'next/link';
 const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Ahmedabad', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
 const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
 const PROC_TYPES = ['Goods', 'Services', 'Works'];
+const PAYMENT_TYPES = ['Advance', 'Credit', 'Advance + Credit'];
 
 let _itemId = 0;
 function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
@@ -27,6 +28,7 @@ export default function NewPR() {
     site: '',
     category: '',
     procurement_type: 'Goods',
+    payment_type: '',
     vendor_id: '',
     pr_purpose: '',
     payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '',
@@ -103,6 +105,7 @@ export default function NewPR() {
         site: form.site,
         category: form.category,
         procurement_type: form.procurement_type,
+        payment_type: form.payment_type,
         vendor_id: form.vendor_id,
         purpose: form.pr_purpose,
         payment_stages: {
@@ -268,6 +271,14 @@ export default function NewPR() {
 
         {/* Payment Terms */}
         <Section title="Payment Terms">
+          <div className="mb-4 max-w-xs">
+            <label className="block text-xs text-gray-500 mb-1">Payment Type</label>
+            <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+              <option value="">Select payment type...</option>
+              {PAYMENT_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
           <div className="text-xs text-gray-500 mb-3">Enter percentages for each stage (total should be 100%)</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
