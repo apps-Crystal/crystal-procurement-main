@@ -42,10 +42,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { site, purpose, vendor_id, category, payment_stages, delivery_terms,
-      delivery_location, expected_delivery, procurement_type, is_reimbursable,
-      requisitioned_by, warranty_amc, freight_amount, installation_amount,
-      items } = body;
+    const { site, purpose, vendor_id, category, payment_stages, payment_type,
+      delivery_terms, delivery_location, expected_delivery, procurement_type,
+      is_reimbursable, requisitioned_by, warranty_amc, freight_amount,
+      installation_amount, items } = body;
 
     if (!site) return NextResponse.json({ error: 'Site is required' }, { status: 400 });
     if (!category) return NextResponse.json({ error: 'Category is required' }, { status: 400 });
@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
       Requested_By: raised_by,
       Vendor_ID: vendor_id || '',
       Purchase_Category: category,
+      Payment_Type: payment_type || '',
       Payment_Terms: paymentSummary,
       Delivery_Terms: delivery_terms || '',
       Delivery_Location: delivery_location || '',
