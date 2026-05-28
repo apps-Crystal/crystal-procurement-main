@@ -46,24 +46,26 @@ export async function appendRow(range: string, values: (string | number | null)[
   });
 }
 
-// Deterministic row write: reads the sheet, finds the next empty row after the
-// last row containing any data, and writes the values starting at column A of
-// that row. Avoids Google's auto-detect of the "logical table" in
-// spreadsheets.values.append, which mis-aligns columns when the sheet has
-// historical gaps or stray data in non-A columns.
+// Deterministic row write. Two reasons we don't use the plain `appendRow`:
+// 1. `values.append` with just the sheet name as range lets Google auto-detect
+//    the "logical table", which mis-aligns columns when there are gaps in the
+//    sheet (we saw PR_ID landing in column AC instead of A).
+// 2. `values.update` would let us pick the exact row, but it does NOT extend
+//    the sheet grid, so writing past the last allocated row fails.
+// Anchoring `append` at `A1` with `INSERT_ROWS` fixes both: the table is
+// detected from A1 (so column A is the start), and INSERT_ROWS grows the grid.
 export async function writeNewRow(sheetName: string, values: (string | number | null)[]): Promise<number> {
   const sheets = await getSheets();
-  const existing = await readSheet(sheetName);
-  // existing.length is the count of returned rows (including any trailing data row).
-  // The next 1-indexed sheet row is existing.length + 1.
-  const nextRow = existing.length + 1;
-  await sheets.spreadsheets.values.update({
+  const res = await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${sheetName}!A${nextRow}`,
+    range: `${sheetName}!A1`,
     valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
   });
-  return nextRow;
+  const updated = res.data.updates?.updatedRange || '';
+  const match = updated.match(/!A(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
 }
 
 export async function updateRow(range: string, values: (string | number | null)[]): Promise<void> {
