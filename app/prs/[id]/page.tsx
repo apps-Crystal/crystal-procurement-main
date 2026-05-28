@@ -143,9 +143,10 @@ export default function PRDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
                 {[
                   ['Site', pr.Site], ['Category', pr.Purchase_Category], ['Procurement Type', pr.Procurement_Type],
-                  ['Vendor', vendor?.Company_Name || pr.Vendor_ID], ['Payment Terms', pr.Payment_Terms], ['Delivery Terms', pr.Delivery_Terms],
-                  ['Delivery Location', pr.Delivery_Location], ['Expected Delivery', pr.Expected_Delivery_Date], ['Reimbursable', pr.Is_Customer_Reimbursable],
-                  ['Requisitioned By', pr.Requisition_By], ['Warranty / AMC', pr.Warranty_AMC], ['Total (incl. GST)', fmt(pr.Total_Incl_GST)],
+                  ['Vendor', vendor?.Company_Name || pr.Vendor_ID], ['Payment Type', pr.Payment_Type], ['Payment Terms', pr.Payment_Terms],
+                  ['Delivery Terms', pr.Delivery_Terms], ['Delivery Location', pr.Delivery_Location], ['Expected Delivery', pr.Expected_Delivery_Date],
+                  ['Reimbursable', pr.Is_Customer_Reimbursable], ['Requisitioned By', pr.Requisition_By], ['Warranty / AMC', pr.Warranty_AMC],
+                  ['Total (incl. GST)', fmt(pr.Total_Incl_GST)],
                 ].map(([label, value]) => value ? (
                   <div key={label}>
                     <div className="text-xs text-gray-400 mb-0.5">{label}</div>

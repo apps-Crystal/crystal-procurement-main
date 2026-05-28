@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const { site, purpose, vendor_id, category, payment_stages, payment_type,
       delivery_terms, delivery_location, expected_delivery, procurement_type,
       is_reimbursable, requisitioned_by, warranty_amc, freight_amount,
-      installation_amount, items } = body;
+      installation_amount, upload_quotation, final_agreed_pi, items } = body;
 
     if (!site) return NextResponse.json({ error: 'Site is required' }, { status: 400 });
     if (!category) return NextResponse.json({ error: 'Category is required' }, { status: 400 });
@@ -113,6 +113,8 @@ export async function POST(req: NextRequest) {
       Freight_Amount: freight_amount || 0,
       Has_Installation: installation_amount ? 'Yes' : 'No',
       Installation_Amount: installation_amount || 0,
+      'Upload Quotation': upload_quotation || '',
+      'Final Agreed PI': final_agreed_pi || '',
     };
 
     const prRow = headers.length > 0

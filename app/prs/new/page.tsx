@@ -43,8 +43,36 @@ export default function NewPR() {
   const [vendorSearch, setVendorSearch] = useState('');
   const [vendorResults, setVendorResults] = useState<any[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [quotationUrl, setQuotationUrl] = useState('');
+  const [quotationName, setQuotationName] = useState('');
+  const [uploadingQuotation, setUploadingQuotation] = useState(false);
+  const [piUrl, setPiUrl] = useState('');
+  const [piName, setPiName] = useState('');
+  const [uploadingPi, setUploadingPi] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  async function uploadDoc(file: File, prefix: string,
+    setUrl: (u: string) => void, setName: (n: string) => void, setBusy: (b: boolean) => void) {
+    setBusy(true);
+    setError('');
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('prefix', prefix);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Upload failed (${res.status})`);
+      setUrl(data.url);
+      setName(file.name);
+    } catch (e: any) {
+      setError(`Upload failed: ${e.message}`);
+      setUrl('');
+      setName('');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // Vendor search debounce
   useEffect(() => {
@@ -93,6 +121,7 @@ export default function NewPR() {
     if (!form.site) { setError('Please select a site'); return; }
     if (!form.category) { setError('Please select a category'); return; }
     if (!items[0].item_name) { setError('At least one item is required'); return; }
+    if (uploadingQuotation || uploadingPi) { setError('Please wait for file uploads to finish'); return; }
     setSaving(true);
     setError('');
 
@@ -121,6 +150,8 @@ export default function NewPR() {
         is_reimbursable: form.is_reimbursable,
         requisitioned_by: form.requisition_by,
         warranty_amc: form.warranty_amc,
+        upload_quotation: quotationUrl,
+        final_agreed_pi: piUrl,
         items: items.filter(it => it.item_name.trim()).map((it, i) => ({
           line_no: i + 1,
           name: it.item_name,
@@ -266,6 +297,55 @@ export default function NewPR() {
               <button type="button" onClick={() => { setSelectedVendor(null); set('vendor_id', ''); }}
                 className="ml-2 text-xs text-gray-400 hover:text-gray-600">✕ Clear</button>
             )}
+          </div>
+        </Section>
+
+        {/* Documents */}
+        <Section title="Documents (Optional)">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              {
+                label: 'Upload Quotation',
+                url: quotationUrl,
+                name: quotationName,
+                busy: uploadingQuotation,
+                onPick: (f: File) => uploadDoc(f, 'QUOTATION', setQuotationUrl, setQuotationName, setUploadingQuotation),
+                clear: () => { setQuotationUrl(''); setQuotationName(''); },
+              },
+              {
+                label: 'Final Agreed PI',
+                url: piUrl,
+                name: piName,
+                busy: uploadingPi,
+                onPick: (f: File) => uploadDoc(f, 'FINAL_PI', setPiUrl, setPiName, setUploadingPi),
+                clear: () => { setPiUrl(''); setPiName(''); },
+              },
+            ].map(d => (
+              <div key={d.label}>
+                <label className="block text-xs text-gray-500 mb-1">{d.label}</label>
+                {!d.url && !d.busy && (
+                  <label className="flex items-center gap-2 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600">
+                    <span>Choose file...</span>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) d.onPick(f); }} />
+                  </label>
+                )}
+                {d.busy && (
+                  <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">
+                    <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                    <span>Uploading...</span>
+                  </div>
+                )}
+                {d.url && !d.busy && (
+                  <div className="flex items-center justify-between gap-2 border border-green-200 bg-green-50 rounded-lg px-3 py-2 text-sm">
+                    <a href={d.url} target="_blank" rel="noreferrer" className="text-green-700 hover:underline truncate">
+                      ✓ {d.name || 'Uploaded'}
+                    </a>
+                    <button type="button" onClick={d.clear} className="text-xs text-gray-400 hover:text-red-500">✕</button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </Section>
 
