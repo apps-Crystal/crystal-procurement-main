@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSheet, rowsToObjects, appendRow, getNextId } from '@/lib/sheets';
+import { readSheet, rowsToObjects, writeNewRow, getNextId } from '@/lib/sheets';
 import { getCurrentUser } from '@/lib/current-user';
 
 export async function GET(req: NextRequest) {
@@ -10,6 +10,9 @@ export async function GET(req: NextRequest) {
 
     const rows = await readSheet('PR_Master');
     let prs = rowsToObjects(rows);
+
+    // Drop ghost rows (no PR_ID) left over from earlier broken submissions.
+    prs = prs.filter(p => p.PR_ID && p.PR_ID.trim());
 
     if (site && site !== 'all') prs = prs.filter(p => p.Site === site);
     if (status && status !== 'all') prs = prs.filter(p => p.Status_Code === status);
@@ -114,7 +117,7 @@ export async function POST(req: NextRequest) {
       ? headers.map((h: string) => fieldMap[h] ?? '')
       : Object.values(fieldMap);
 
-    await appendRow('PR_Master', prRow);
+    await writeNewRow('PR_Master', prRow);
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -122,7 +125,7 @@ export async function POST(req: NextRequest) {
       const qty = parseFloat(item.qty) || 0;
       const gst = parseFloat(item.gst) || 0;
       const lineTotal = qty * rate * (1 + gst / 100);
-      await appendRow('PR_Items', [
+      await writeNewRow('PR_Items', [
         pr_id, i + 1, item.name, item.purpose || '', qty,
         item.uom, rate, gst, item.warranty || '', lineTotal.toFixed(2),
       ]);

@@ -46,6 +46,26 @@ export async function appendRow(range: string, values: (string | number | null)[
   });
 }
 
+// Deterministic row write: reads the sheet, finds the next empty row after the
+// last row containing any data, and writes the values starting at column A of
+// that row. Avoids Google's auto-detect of the "logical table" in
+// spreadsheets.values.append, which mis-aligns columns when the sheet has
+// historical gaps or stray data in non-A columns.
+export async function writeNewRow(sheetName: string, values: (string | number | null)[]): Promise<number> {
+  const sheets = await getSheets();
+  const existing = await readSheet(sheetName);
+  // existing.length is the count of returned rows (including any trailing data row).
+  // The next 1-indexed sheet row is existing.length + 1.
+  const nextRow = existing.length + 1;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${sheetName}!A${nextRow}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [values] },
+  });
+  return nextRow;
+}
+
 export async function updateRow(range: string, values: (string | number | null)[]): Promise<void> {
   const sheets = await getSheets();
   await sheets.spreadsheets.values.update({
