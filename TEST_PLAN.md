@@ -78,7 +78,7 @@ Fields the form sends to `/api/prs`: `site`, `category`, `procurement_type`, `ve
 | # | Test | Steps | Expected |
 |---|---|---|---|
 | 4A.1 | Sites dropdown | Open Site selector | Options: Noida, Detroj, Pune, Kheda, Kolkata, Ahmedabad, Bhubaneswar, Dhulagarh, Dankuni, Mumbai, Vavdi, Taloja |
-| 4A.2 | Categories dropdown | Open Category selector | Civil, Electrical, Mechanical, IT & Telecom, Housekeeping, Security, Canteen, AMC / Service, Furniture, Stationery, Other |
+| 4A.2 | Categories dropdown | Open Category selector | Maintenance Capex, Operations Capex, Project/Site Capex, Service, Consumables, Assets |
 | 4A.3 | Procurement Type dropdown | Open Procurement Type | Goods, Services, Works |
 | 4A.4 | Reimbursable | Open dropdown | No, Yes |
 | 4A.5 | Vendor search | Type 2+ chars in vendor search | Dropdown lists up to 8 results showing Company_Name, Vendor_ID, GST_Number, KYC badge |

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Ahmedabad', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
-const CATEGORIES = ['Civil', 'Electrical', 'Mechanical', 'IT & Telecom', 'Housekeeping', 'Security', 'Canteen', 'AMC / Service', 'Furniture', 'Stationery', 'Other'];
+const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
 const PROC_TYPES = ['Goods', 'Services', 'Works'];
 
 let _itemId = 0;
