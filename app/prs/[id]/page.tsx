@@ -4,10 +4,13 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const STATUS_BADGE: Record<string, string> = {
+  DRAFT:        'bg-yellow-100 text-yellow-700',
   PR_SUBMITTED: 'bg-blue-100 text-blue-700',
   PR_APPROVED:  'bg-green-100 text-green-700',
   PR_REJECTED:  'bg-red-100 text-red-700',
   PO_POSTED:    'bg-purple-100 text-purple-700',
+  CANCELLED:    'bg-gray-200 text-gray-700',
+  ARCHIVED:     'bg-slate-200 text-slate-600',
 };
 
 function fmt(n: string | number) {

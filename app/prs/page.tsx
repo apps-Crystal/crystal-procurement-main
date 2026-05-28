@@ -5,18 +5,24 @@ import Link from 'next/link';
 import { useSite } from '@/context/SiteContext';
 
 const STATUS_TABS = [
-  { label: 'All', value: 'all' },
+  { label: 'All',       value: 'all' },
+  { label: 'Draft',     value: 'DRAFT' },
   { label: 'Submitted', value: 'PR_SUBMITTED' },
-  { label: 'Approved', value: 'PR_APPROVED' },
+  { label: 'Approved',  value: 'PR_APPROVED' },
   { label: 'PO Posted', value: 'PO_POSTED' },
-  { label: 'Rejected', value: 'PR_REJECTED' },
+  { label: 'Rejected',  value: 'PR_REJECTED' },
+  { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'Archived',  value: 'ARCHIVED' },
 ];
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  DRAFT:        { label: 'Draft',     cls: 'bg-yellow-100 text-yellow-700' },
   PR_SUBMITTED: { label: 'Submitted', cls: 'bg-blue-100 text-blue-700' },
   PR_APPROVED:  { label: 'Approved',  cls: 'bg-green-100 text-green-700' },
   PR_REJECTED:  { label: 'Rejected',  cls: 'bg-red-100 text-red-700' },
   PO_POSTED:    { label: 'PO Posted', cls: 'bg-purple-100 text-purple-700' },
+  CANCELLED:    { label: 'Cancelled', cls: 'bg-gray-200 text-gray-700' },
+  ARCHIVED:     { label: 'Archived',  cls: 'bg-slate-200 text-slate-600' },
 };
 
 function fmt(n: string | number) {
