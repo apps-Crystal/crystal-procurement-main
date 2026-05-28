@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSheet, rowsToObjects, appendRow, getNextId } from '@/lib/sheets';
+import { readSheet, rowsToObjects, writeNewRow, getNextId } from '@/lib/sheets';
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,6 +14,9 @@ export async function GET(req: NextRequest) {
 
     let grns = rowsToObjects(grnRows);
     const vendors = rowsToObjects(vendorRows);
+
+    // Drop ghost rows (no GRN_ID) left over from earlier broken submissions.
+    grns = grns.filter(g => g.GRN_ID && g.GRN_ID.trim());
 
     if (site && site !== 'all') grns = grns.filter(g => g.Site === site);
     if (status && status !== 'all') grns = grns.filter(g => g.Status === status);
@@ -67,12 +70,12 @@ export async function POST(req: NextRequest) {
       '', '', '', 'Draft', '', '', '', '', '', '', '',
     ];
 
-    await appendRow('GRN_Master', grnRow);
+    await writeNewRow('GRN_Master', grnRow);
 
     for (let i = 0; i < (items || []).length; i++) {
       const item = items[i];
       const balance = (parseFloat(item.ordered_qty) || 0) - (parseFloat(item.received_qty) || 0);
-      await appendRow('GRN_Items', [
+      await writeNewRow('GRN_Items', [
         grn_id, po_id, i + 1, '', item.item_name,
         item.ordered_qty, item.received_qty, item.invoice_qty || item.received_qty,
         item.defective_qty || 0, balance, item.uom, item.line_total || '',

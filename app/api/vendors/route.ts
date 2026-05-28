@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSheet, rowsToObjects, appendRow } from '@/lib/sheets';
+import { readSheet, rowsToObjects, writeNewRow } from '@/lib/sheets';
 
 export async function GET(req: NextRequest) {
   try {
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const dupPAN = vendors.find(v => v.Vendor_PAN === pan && pan);
     if (dupPAN) return NextResponse.json({ error: `PAN already registered under ${dupPAN.Company_Name} (${dupPAN.Vendor_ID})` }, { status: 400 });
 
-    await appendRow('Vendor_Master', [
+    await writeNewRow('Vendor_Master', [
       vendor_id, company_name, contact_person, contact_number, email,
       bank_name, acc_holder, acc_number, branch, ifsc,
       gst_number, Array.isArray(providing_sites) ? providing_sites.join(', ') : providing_sites,

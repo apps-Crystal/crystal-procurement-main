@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSheet, rowsToObjects, appendRow, getNextId } from '@/lib/sheets';
+import { readSheet, rowsToObjects, writeNewRow, getNextId } from '@/lib/sheets';
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,6 +18,9 @@ export async function GET(req: NextRequest) {
     const grns = rowsToObjects(grnRows);
     const grnItems = rowsToObjects(grnItemRows);
     const poItems = rowsToObjects(poItemRows);
+
+    // Drop ghost rows (no PO_ID) left over from earlier broken submissions.
+    pos = pos.filter(p => p.PO_ID && p.PO_ID.trim());
 
     if (site && site !== 'all') pos = pos.filter(p => p.Site === site);
     if (status && status !== 'all') pos = pos.filter(p => p.Status_Code === status);
@@ -106,14 +109,14 @@ export async function POST(req: NextRequest) {
       ? headers.map((h: string) => fieldMap[h] ?? '')
       : Object.values(fieldMap);
 
-    await appendRow('PO_Master', poRow);
+    await writeNewRow('PO_Master', poRow);
 
     for (let i = 0; i < (items || []).length; i++) {
       const item = items[i];
       const rate = parseFloat(item.rate) || 0;
       const qty = parseFloat(item.qty) || 0;
       const gst = parseFloat(item.gst) || 0;
-      await appendRow('PO_Items', [po_id, i + 1, item.name, qty, item.uom, rate, gst, (qty * rate * (1 + gst / 100)).toFixed(2)]);
+      await writeNewRow('PO_Items', [po_id, i + 1, item.name, qty, item.uom, rate, gst, (qty * rate * (1 + gst / 100)).toFixed(2)]);
     }
 
     // Update PR status to PO_POSTED
