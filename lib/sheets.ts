@@ -88,32 +88,52 @@ export function findRowIndex(rows: string[][], colIndex: number, value: string):
   return -1;
 }
 
-// Get next counter value for ID generation
+// Get next counter value for ID generation.
+// COUNTERS sheet layout: Key | LastSerial | UpdatedAt
+// Key format: `${entity}:${site}:${month}` (e.g. "PR:Taloja:May2026")
 export async function getNextId(entity: string, site: string, month: string): Promise<string> {
   const rows = await readSheet('COUNTERS');
-  const headers = rows[0];
-  const entityCol = headers.indexOf('Entity');
-  const siteCol = headers.indexOf('Site');
-  const monthCol = headers.indexOf('Month');
-  const counterCol = headers.indexOf('Counter');
+  const headers = rows[0] || [];
+  const keyCol = headers.indexOf('Key');
+  const serialCol = headers.indexOf('LastSerial');
+  const updatedAtCol = headers.indexOf('UpdatedAt');
+
+  if (keyCol === -1 || serialCol === -1) {
+    throw new Error('COUNTERS sheet missing Key or LastSerial column');
+  }
+
+  const key = `${entity}:${site}:${month}`;
+  const now = new Date().toLocaleString('en-IN');
+  const colLetter = (idx: number) => String.fromCharCode(65 + idx);
 
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][entityCol] === entity && rows[i][siteCol] === site && rows[i][monthCol] === month) {
-      const current = parseInt(rows[i][counterCol] || '0');
+    if (rows[i][keyCol] === key) {
+      const current = parseInt(rows[i][serialCol] || '0', 10);
       const next = current + 1;
-      // Update counter
       const sheets = await getSheets();
+      const startCol = Math.min(serialCol, updatedAtCol === -1 ? serialCol : updatedAtCol);
+      const endCol = Math.max(serialCol, updatedAtCol === -1 ? serialCol : updatedAtCol);
+      const rowValues: (string | number)[] = [];
+      for (let c = startCol; c <= endCol; c++) {
+        if (c === serialCol) rowValues.push(next);
+        else if (c === updatedAtCol) rowValues.push(now);
+        else rowValues.push(rows[i][c] || '');
+      }
       await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID,
-        range: `COUNTERS!${String.fromCharCode(65 + counterCol)}${i + 1}`,
+        range: `COUNTERS!${colLetter(startCol)}${i + 1}:${colLetter(endCol)}${i + 1}`,
         valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [[next]] },
+        requestBody: { values: [rowValues] },
       });
       return String(next).padStart(4, '0');
     }
   }
 
-  // Create new counter row
-  await appendRow('COUNTERS', [entity, site, month, 1]);
+  // Create new counter row matching the existing column order.
+  const newRow: (string | number)[] = new Array(headers.length).fill('');
+  newRow[keyCol] = key;
+  newRow[serialCol] = 1;
+  if (updatedAtCol !== -1) newRow[updatedAtCol] = now;
+  await appendRow('COUNTERS', newRow);
   return '0001';
 }
