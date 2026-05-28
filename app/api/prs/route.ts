@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     const { site, purpose, vendor_id, category, payment_stages, payment_type,
       delivery_terms, delivery_location, expected_delivery, procurement_type,
       is_reimbursable, requisitioned_by, warranty_amc, freight_amount,
-      installation_amount, upload_quotation, final_agreed_pi, items } = body;
+      installation_amount, upload_quotation, final_agreed_pi, supporting_docs,
+      items } = body;
 
     if (!site) return NextResponse.json({ error: 'Site is required' }, { status: 400 });
     if (!category) return NextResponse.json({ error: 'Category is required' }, { status: 400 });
@@ -115,6 +116,7 @@ export async function POST(req: NextRequest) {
       Installation_Amount: installation_amount || 0,
       'Upload Quotation': upload_quotation || '',
       'Final Agreed PI': final_agreed_pi || '',
+      'Supporting Docs': supporting_docs || '',
     };
 
     const prRow = headers.length > 0

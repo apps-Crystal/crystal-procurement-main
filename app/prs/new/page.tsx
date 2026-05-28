@@ -49,6 +49,9 @@ export default function NewPR() {
   const [piUrl, setPiUrl] = useState('');
   const [piName, setPiName] = useState('');
   const [uploadingPi, setUploadingPi] = useState(false);
+  const [supportingUrl, setSupportingUrl] = useState('');
+  const [supportingName, setSupportingName] = useState('');
+  const [uploadingSupporting, setUploadingSupporting] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -121,7 +124,7 @@ export default function NewPR() {
     if (!form.site) { setError('Please select a site'); return; }
     if (!form.category) { setError('Please select a category'); return; }
     if (!items[0].item_name) { setError('At least one item is required'); return; }
-    if (uploadingQuotation || uploadingPi) { setError('Please wait for file uploads to finish'); return; }
+    if (uploadingQuotation || uploadingPi || uploadingSupporting) { setError('Please wait for file uploads to finish'); return; }
     setSaving(true);
     setError('');
 
@@ -152,6 +155,7 @@ export default function NewPR() {
         warranty_amc: form.warranty_amc,
         upload_quotation: quotationUrl,
         final_agreed_pi: piUrl,
+        supporting_docs: supportingUrl,
         items: items.filter(it => it.item_name.trim()).map((it, i) => ({
           line_no: i + 1,
           name: it.item_name,
@@ -302,7 +306,7 @@ export default function NewPR() {
 
         {/* Documents */}
         <Section title="Documents (Optional)">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               {
                 label: 'Upload Quotation',
@@ -319,6 +323,14 @@ export default function NewPR() {
                 busy: uploadingPi,
                 onPick: (f: File) => uploadDoc(f, 'FINAL_PI', setPiUrl, setPiName, setUploadingPi),
                 clear: () => { setPiUrl(''); setPiName(''); },
+              },
+              {
+                label: 'Supporting Documents',
+                url: supportingUrl,
+                name: supportingName,
+                busy: uploadingSupporting,
+                onPick: (f: File) => uploadDoc(f, 'SUPPORTING', setSupportingUrl, setSupportingName, setUploadingSupporting),
+                clear: () => { setSupportingUrl(''); setSupportingName(''); },
               },
             ].map(d => (
               <div key={d.label}>
