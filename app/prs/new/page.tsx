@@ -36,7 +36,6 @@ export default function NewPR() {
     is_reimbursable: 'No',
     requisition_by: '',
     warranty_amc: '',
-    requested_by: 'Yatish Agarwal',
   });
   const [items, setItems] = useState([newItem()]);
   const [vendorSearch, setVendorSearch] = useState('');
@@ -117,7 +116,6 @@ export default function NewPR() {
         is_reimbursable: form.is_reimbursable,
         requisitioned_by: form.requisition_by,
         warranty_amc: form.warranty_amc,
-        raised_by: form.requested_by,
         items: items.filter(it => it.item_name.trim()).map((it, i) => ({
           line_no: i + 1,
           name: it.item_name,

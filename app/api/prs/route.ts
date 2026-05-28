@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSheet, rowsToObjects, appendRow, getNextId } from '@/lib/sheets';
+import { getCurrentUser } from '@/lib/current-user';
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,7 +42,13 @@ export async function POST(req: NextRequest) {
     const { site, purpose, vendor_id, category, payment_stages, delivery_terms,
       delivery_location, expected_delivery, procurement_type, is_reimbursable,
       requisitioned_by, warranty_amc, freight_amount, installation_amount,
-      items, raised_by } = body;
+      items } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    }
+    const raised_by = currentUser.name?.trim() || currentUser.email;
 
     const now = new Date();
     const month = now.toLocaleString('default', { month: 'long' }) + now.getFullYear();
