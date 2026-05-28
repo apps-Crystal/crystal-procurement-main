@@ -94,10 +94,12 @@ export default function NewPR() {
     setSaving(true);
     setError('');
 
-    const res = await fetch('/api/prs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    let res: Response;
+    try {
+      res = await fetch('/api/prs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
         site: form.site,
         category: form.category,
         procurement_type: form.procurement_type,
@@ -125,11 +127,32 @@ export default function NewPR() {
           rate: it.rate,
           gst: it.gst,
           line_total: lineTotal(it).toFixed(2),
-        })),
-      }),
-    });
-    const data = await res.json();
-    if (data.error) { setError(data.error); setSaving(false); return; }
+          })),
+        }),
+      });
+    } catch (networkErr: any) {
+      setError(`Network error: ${networkErr.message || 'Could not reach server'}`);
+      setSaving(false);
+      return;
+    }
+    let data: any;
+    try {
+      data = await res.json();
+    } catch {
+      setError(`Server returned ${res.status} with non-JSON response`);
+      setSaving(false);
+      return;
+    }
+    if (!res.ok || data.error) {
+      setError(data.error || `Server error (${res.status})`);
+      setSaving(false);
+      return;
+    }
+    if (!data.pr_id) {
+      setError('Server did not return a PR ID');
+      setSaving(false);
+      return;
+    }
     router.push(`/prs/${encodeURIComponent(data.pr_id)}`);
   }
 

@@ -44,11 +44,22 @@ export async function POST(req: NextRequest) {
       requisitioned_by, warranty_amc, freight_amount, installation_amount,
       items } = body;
 
+    if (!site) return NextResponse.json({ error: 'Site is required' }, { status: 400 });
+    if (!category) return NextResponse.json({ error: 'Category is required' }, { status: 400 });
+    if (!items || items.length === 0) {
+      return NextResponse.json({ error: 'At least one line item is required' }, { status: 400 });
+    }
+
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
     }
     const raised_by = currentUser.name?.trim() || currentUser.email;
+
+    // Read existing headers BEFORE bumping the counter so a transient sheet
+    // failure does not leave an orphan counter increment.
+    const existingRows = await readSheet('PR_Master');
+    const headers = existingRows.length > 0 ? existingRows[0] : [];
 
     const now = new Date();
     const month = now.toLocaleString('default', { month: 'long' }) + now.getFullYear();
@@ -56,34 +67,56 @@ export async function POST(req: NextRequest) {
     const pr_id = `PR-${site}-${month}/${counter}`;
     const timestamp = now.toLocaleString('en-IN');
 
-    // Build payment summary string from stages
     const paymentSummary = Object.entries(payment_stages || {})
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}: ${v}%`)
       .join(', ');
 
-    const totalIncGST = items?.reduce((sum: number, item: any) => {
+    const totalIncGST = items.reduce((sum: number, item: any) => {
       const rate = parseFloat(item.rate) || 0;
       const qty = parseFloat(item.qty) || 0;
       const gst = parseFloat(item.gst) || 0;
       return sum + (qty * rate * (1 + gst / 100));
-    }, 0) || 0;
+    }, 0);
 
-    const prRow = [
-      pr_id, timestamp, timestamp.split(',')[0], site, purpose,
-      raised_by, vendor_id, category, 'MIXED', paymentSummary,
-      delivery_terms, delivery_location, 'Yes', is_reimbursable || 'No',
-      totalIncGST.toFixed(2), '', '', '', 'PR_SUBMITTED', 'PR Submitted',
-      raised_by, timestamp, '', expected_delivery, warranty_amc || '',
-      requisitioned_by, '', '', procurement_type || 'Opex',
-      freight_amount ? 'Yes' : 'No', freight_amount || 0,
-      installation_amount ? 'Yes' : 'No', installation_amount || 0,
-    ];
+    const fieldMap: Record<string, any> = {
+      PR_ID: pr_id,
+      Timestamp: timestamp,
+      Date_of_Requisition: timestamp.split(',')[0],
+      Site: site,
+      PR_Purpose: purpose || '',
+      Requested_By: raised_by,
+      Vendor_ID: vendor_id || '',
+      Purchase_Category: category,
+      Payment_Terms: paymentSummary,
+      Delivery_Terms: delivery_terms || '',
+      Delivery_Location: delivery_location || '',
+      Is_Customer_Reimbursable: is_reimbursable || 'No',
+      Total_Incl_GST: totalIncGST.toFixed(2),
+      Status_Code: 'PR_SUBMITTED',
+      Status_Label: 'PR Submitted',
+      Last_Action_By: raised_by,
+      Last_Action_At: timestamp,
+      Approver_Remarks: '',
+      Expected_Delivery_Date: expected_delivery || '',
+      Warranty_AMC: warranty_amc || '',
+      Requisition_By: requisitioned_by || '',
+      PR_Approved_By: '',
+      PR_Approved_DateTime: '',
+      Procurement_Type: procurement_type || 'Goods',
+      Has_Freight: freight_amount ? 'Yes' : 'No',
+      Freight_Amount: freight_amount || 0,
+      Has_Installation: installation_amount ? 'Yes' : 'No',
+      Installation_Amount: installation_amount || 0,
+    };
+
+    const prRow = headers.length > 0
+      ? headers.map((h: string) => fieldMap[h] ?? '')
+      : Object.values(fieldMap);
 
     await appendRow('PR_Master', prRow);
 
-    // Append items
-    for (let i = 0; i < (items || []).length; i++) {
+    for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const rate = parseFloat(item.rate) || 0;
       const qty = parseFloat(item.qty) || 0;
@@ -97,6 +130,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ pr_id, success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('PR POST failed:', e);
+    return NextResponse.json({ error: e.message || 'Failed to create PR' }, { status: 500 });
   }
 }
