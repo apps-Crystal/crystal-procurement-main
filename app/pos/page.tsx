@@ -46,7 +46,7 @@ function POListInner() {
         <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
           <div className="flex flex-wrap gap-3 items-center">
             <div className="flex gap-1">
-              {[['All', 'all'], ['Active', 'PO_POSTED'], ['Archived', 'ARCHIVED']].map(([label, value]) => (
+              {[['All', 'all'], ['Posted', 'PO_POSTED'], ['Cancelled', 'CANCELLED'], ['Archived', 'ARCHIVED']].map(([label, value]) => (
                 <button key={value} onClick={() => setStatus(value)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${status === value ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'}`}>
                   {label}
@@ -98,7 +98,12 @@ function POListInner() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${po.Status_Code === 'PO_POSTED' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        po.Status_Code === 'PO_POSTED' ? 'bg-blue-100 text-blue-700' :
+                        po.Status_Code === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                        po.Status_Code === 'ARCHIVED' ? 'bg-slate-200 text-slate-600' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
                         {po.Status_Label || po.Status_Code}
                       </span>
                     </td>
