@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSheet, rowsToObjects, findRowIndex, updateRow } from '@/lib/sheets';
+import { getCurrentUser } from '@/lib/current-user';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -36,7 +37,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const decodedId = decodeURIComponent(id);
     const body = await req.json();
-    const { action, remarks, approved_by } = body;
+    const { action, remarks } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    }
+    const approver = currentUser.name?.trim() || currentUser.email;
 
     const rows = await readSheet('PR_Master');
     const headers = rows[0];
@@ -63,11 +70,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     row[statusCodeCol] = statusMap[action][0];
     row[statusLabelCol] = statusMap[action][1];
-    row[actionByCol] = approved_by || 'Admin';
+    row[actionByCol] = approver;
     row[actionAtCol] = now;
     if (remarksCol >= 0) row[remarksCol] = remarks || '';
     if (action === 'approve') {
-      if (approvedByCol >= 0) row[approvedByCol] = approved_by || 'Admin';
+      if (approvedByCol >= 0) row[approvedByCol] = approver;
       if (approvedAtCol >= 0) row[approvedAtCol] = now;
     }
 

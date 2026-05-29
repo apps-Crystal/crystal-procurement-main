@@ -39,7 +39,7 @@ export default function PRDetail() {
     const res = await fetch(`/api/prs/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, remarks, approved_by: 'Yatish Agarwal' }),
+      body: JSON.stringify({ action, remarks }),
     });
     const result = await res.json();
     if (result.success) {
