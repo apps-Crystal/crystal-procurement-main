@@ -6,7 +6,6 @@ import Link from 'next/link';
 const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
 const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
 const PROC_TYPES = ['Material', 'Service'];
-const PAYMENT_TYPES = ['Advance', 'Credit', 'Advance + Credit'];
 
 let _itemId = 0;
 function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
@@ -28,12 +27,11 @@ export default function NewPR() {
     site: '',
     category: '',
     procurement_type: 'Material',
-    payment_type: '',
     vendor_id: '',
     vendor_order_ref_no: '',
     remarks: '',
     pr_purpose: '',
-    payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '',
+    payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '', payment_retention: '',
     delivery_terms: '',
     delivery_location: '',
     expected_delivery_date: '',
@@ -116,6 +114,7 @@ export default function NewPR() {
       form.payment_running ? `Running: ${form.payment_running}%` : null,
       form.payment_postdel ? `Post Delivery: ${form.payment_postdel}%` : null,
       form.payment_postcomp ? `Post Completion: ${form.payment_postcomp}%` : null,
+      form.payment_retention ? `Retention: ${form.payment_retention}%` : null,
     ].filter(Boolean);
     return parts.join(' | ');
   }
@@ -138,7 +137,6 @@ export default function NewPR() {
         site: form.site,
         category: form.category,
         procurement_type: form.procurement_type,
-        payment_type: form.payment_type,
         vendor_id: form.vendor_id,
         purpose: form.pr_purpose,
         payment_stages: {
@@ -147,6 +145,7 @@ export default function NewPR() {
           Running: form.payment_running,
           'Post Delivery': form.payment_postdel,
           'Post Completion': form.payment_postcomp,
+          Retention: form.payment_retention,
         },
         delivery_terms: form.delivery_terms,
         delivery_location: form.delivery_location,
@@ -375,22 +374,15 @@ export default function NewPR() {
 
         {/* Payment Terms */}
         <Section title="Payment Terms">
-          <div className="mb-4 max-w-xs">
-            <label className="block text-xs text-gray-500 mb-1">Payment Type</label>
-            <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
-              <option value="">Select payment type...</option>
-              {PAYMENT_TYPES.map(t => <option key={t}>{t}</option>)}
-            </select>
-          </div>
           <div className="text-xs text-gray-500 mb-3">Enter percentages for each stage (total should be 100%)</div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
               ['Advance', 'payment_adv'],
               ['Before Delivery', 'payment_before'],
               ['Running', 'payment_running'],
               ['Post Delivery', 'payment_postdel'],
               ['Post Completion', 'payment_postcomp'],
+              ['Retention', 'payment_retention'],
             ].map(([label, field]) => (
               <div key={field}>
                 <label className="block text-xs text-gray-500 mb-1">{label}</label>

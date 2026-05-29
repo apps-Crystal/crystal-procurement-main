@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { site, purpose, vendor_id, category, payment_stages, payment_type,
+    const { site, purpose, vendor_id, category, payment_stages,
       delivery_terms, delivery_location, expected_delivery, procurement_type,
       is_reimbursable, requisitioned_by, warranty_amc, freight_amount,
       installation_amount, upload_quotation, final_agreed_pi, supporting_docs,
@@ -93,8 +93,13 @@ export async function POST(req: NextRequest) {
       Requested_By: raised_by,
       Vendor_ID: vendor_id || '',
       Purchase_Category: category,
-      Payment_Type: payment_type || '',
       Payment_Terms: paymentSummary,
+      Advance: payment_stages?.Advance || '',
+      'Before Delivery': payment_stages?.['Before Delivery'] || '',
+      Running: payment_stages?.Running || '',
+      'Post Delivery': payment_stages?.['Post Delivery'] || '',
+      'Post Completion': payment_stages?.['Post Completion'] || '',
+      Retention: payment_stages?.Retention || '',
       Delivery_Terms: delivery_terms || '',
       Delivery_Location: delivery_location || '',
       Is_Customer_Reimbursable: is_reimbursable || 'No',
