@@ -143,20 +143,52 @@ export default function PRDetail() {
             {/* Details */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">PR Details</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                {[
-                  ['Site', pr.Site], ['Category', pr.Purchase_Category], ['Procurement Type', pr.Procurement_Type],
-                  ['Vendor', vendor?.Company_Name || pr.Vendor_ID], ['Payment Type', pr.Payment_Type], ['Payment Terms', pr.Payment_Terms],
-                  ['Delivery Terms', pr.Delivery_Terms], ['Delivery Location', pr.Delivery_Location], ['Expected Delivery', pr.Expected_Delivery_Date],
-                  ['Reimbursable', pr.Is_Customer_Reimbursable], ['Requisitioned By', pr.Requisition_By], ['Warranty / AMC', pr.Warranty_AMC],
-                  ['Total (incl. GST)', fmt(pr.Total_Incl_GST)],
-                ].map(([label, value]) => value ? (
-                  <div key={label}>
-                    <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                    <div className="font-medium">{value}</div>
+              {(() => {
+                // Fields shown elsewhere on the page (header, lifecycle, vendor card, items, remarks panel)
+                const skip = new Set([
+                  'PR_ID', 'Status_Code', 'Status_Label',
+                  'Timestamp', 'Date_of_Requisition',
+                  'Requested_By', 'aging_days',
+                  'Last_Action_By', 'Last_Action_At',
+                  'PR_Approved_By', 'PR_Approved_DateTime',
+                  'Approver_Remarks',
+                  'Upload Quotation', 'Final Agreed PI', 'Supporting Docs', 'PR_PDF_Link', 'Approval_Link', 'Approved_PR_Link',
+                ]);
+                // Vendor is shown via vendor card or shown here only as fallback ID
+                const niceLabel = (k: string) => k.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+                const entries = Object.entries(pr)
+                  .filter(([k, v]) => !skip.has(k) && v !== '' && v !== null && v !== undefined && String(v).trim() !== '');
+                // Custom rendering for a few special fields
+                const customRender: Record<string, (v: any) => any> = {
+                  Vendor_ID: v => vendor?.Company_Name ? `${vendor.Company_Name} (${v})` : v,
+                  Total_Incl_GST: v => fmt(v),
+                };
+                const customLabel: Record<string, string> = {
+                  Vendor_ID: 'Vendor',
+                  Purchase_Category: 'Category',
+                  PR_Purpose: 'Purpose',
+                  Is_Customer_Reimbursable: 'Reimbursable',
+                  Expected_Delivery_Date: 'Expected Delivery',
+                  Warranty_AMC: 'Warranty / AMC',
+                  Total_Incl_GST: 'Total (incl. GST)',
+                  Requisition_By: 'Requisitioned By',
+                  Vendor_Ord_ref_no: 'Vendor Order Ref No',
+                };
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+                    {entries.map(([k, v]) => {
+                      const label = customLabel[k] || niceLabel(k);
+                      const value = customRender[k] ? customRender[k](v) : String(v);
+                      return (
+                        <div key={k}>
+                          <div className="text-xs text-gray-400 mb-0.5">{label}</div>
+                          <div className="font-medium break-words">{value}</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ) : null)}
-              </div>
+                );
+              })()}
               {pr.Approver_Remarks && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <div className="text-xs text-gray-400 mb-1">Approver Remarks</div>
