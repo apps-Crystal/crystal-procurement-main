@@ -30,6 +30,8 @@ export default function NewPR() {
     procurement_type: 'Material',
     payment_type: '',
     vendor_id: '',
+    vendor_order_ref_no: '',
+    remarks: '',
     pr_purpose: '',
     payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '',
     delivery_terms: '',
@@ -151,6 +153,8 @@ export default function NewPR() {
         expected_delivery: form.expected_delivery_date,
         is_reimbursable: form.is_reimbursable,
         warranty_amc: form.warranty_amc,
+        vendor_order_ref_no: form.vendor_order_ref_no,
+        remarks: form.remarks,
         upload_quotation: quotationUrl,
         final_agreed_pi: piUrl,
         supporting_docs: supportingUrl,
@@ -270,9 +274,10 @@ export default function NewPR() {
           </div>
         </Section>
 
-        {/* Vendor */}
-        <Section title="Vendor (Optional — can assign later)">
-          <div className="relative">
+        {/* Vendor & Documents */}
+        <Section title="Vendor & Documents (Optional — can assign later)">
+          <div className="relative mb-4">
+            <label className="block text-xs text-gray-500 mb-1">Vendor</label>
             <input value={selectedVendor ? `${selectedVendor.Company_Name} (${selectedVendor.Vendor_ID})` : vendorSearch}
               onChange={e => { setVendorSearch(e.target.value); setSelectedVendor(null); set('vendor_id', ''); }}
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:border-indigo-300"
@@ -296,10 +301,23 @@ export default function NewPR() {
                 className="ml-2 text-xs text-gray-400 hover:text-gray-600">✕ Clear</button>
             )}
           </div>
-        </Section>
 
-        {/* Documents */}
-        <Section title="Documents (Optional)">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Vendor Order Ref No</label>
+              <input value={form.vendor_order_ref_no} onChange={e => set('vendor_order_ref_no', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="Vendor's reference / quote no..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Remarks</label>
+              <input value={form.remarks} onChange={e => set('remarks', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="Additional notes..." />
+            </div>
+          </div>
+
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Documents</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               {
