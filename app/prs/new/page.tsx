@@ -9,8 +9,8 @@ const PROC_TYPES = ['Material', 'Service'];
 const DELIVERY_CHARGES = ['Included', 'Chargeable', 'Extra at Actuals'];
 
 let _itemId = 0;
-function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
-const EMPTY_ITEM = { item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' };
+function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18', delivery: '' }; }
+const EMPTY_ITEM = { item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18', delivery: '' };
 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -33,6 +33,7 @@ export default function NewPR() {
     remarks: '',
     pr_purpose: '',
     payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '', payment_retention: '',
+    specific_payment_terms: '',
     delivery_terms: '',
     delivery_location: '',
     delivery_charges: '',
@@ -107,7 +108,8 @@ export default function NewPR() {
     const qty = parseFloat(item.qty) || 0;
     const rate = parseFloat(item.rate) || 0;
     const gst = parseFloat(item.gst) || 0;
-    return qty * rate * (1 + gst / 100);
+    const delivery = parseFloat(item.delivery) || 0;
+    return qty * rate * (1 + gst / 100) + delivery;
   }
 
   const grandTotal = items.reduce((s, it) => s + lineTotal(it), 0);
@@ -152,6 +154,7 @@ export default function NewPR() {
           'Post Completion': form.payment_postcomp,
           Retention: form.payment_retention,
         },
+        specific_payment_terms: form.specific_payment_terms,
         delivery_terms: form.delivery_terms,
         delivery_location: form.delivery_location,
         delivery_charges: form.delivery_charges,
@@ -174,6 +177,7 @@ export default function NewPR() {
           uom: it.uom,
           rate: it.rate,
           gst: it.gst,
+          delivery: it.delivery,
           line_total: lineTotal(it).toFixed(2),
           })),
         }),
@@ -300,16 +304,22 @@ export default function NewPR() {
                 placeholder="1 year / 2 year AMC..." />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Quality Terms</label>
-              <input value={form.quality_terms} onChange={e => set('quality_terms', e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
-                placeholder="ISI / OEM / inspection..." />
-            </div>
-            <div>
               <label className="block text-xs text-gray-500 mb-1">Special Terms</label>
               <input value={form.special_terms} onChange={e => set('special_terms', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
                 placeholder="Any special conditions..." />
+            </div>
+          </div>
+        </Section>
+
+        {/* Quality */}
+        <Section title="Quality">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Quality Terms</label>
+              <input value={form.quality_terms} onChange={e => set('quality_terms', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="ISI / OEM / inspection..." />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Other Terms</label>
@@ -445,6 +455,12 @@ export default function NewPR() {
           {paymentSummary() && (
             <div className="mt-2 text-xs text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">{paymentSummary()}</div>
           )}
+          <div className="mt-4">
+            <label className="block text-xs text-gray-500 mb-1">Specific Payment Terms</label>
+            <textarea value={form.specific_payment_terms} onChange={e => set('specific_payment_terms', e.target.value)} rows={2}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300 resize-none"
+              placeholder="Net 30 days from invoice / payment against delivery / any specific clauses..." />
+          </div>
         </Section>
 
         {/* Line Items */}
@@ -460,6 +476,9 @@ export default function NewPR() {
                   <th className="text-left pb-2 pl-2 min-w-20">UOM</th>
                   <th className="text-right pb-2 min-w-28">Rate (₹)</th>
                   <th className="text-right pb-2">GST %</th>
+                  {form.delivery_charges === 'Chargeable' && (
+                    <th className="text-right pb-2 min-w-28">Delivery (₹)</th>
+                  )}
                   <th className="text-right pb-2 min-w-28">Total</th>
                   <th className="pb-2" />
                 </tr>
@@ -499,6 +518,13 @@ export default function NewPR() {
                           {['0', '5', '12', '18', '28'].map(g => <option key={g}>{g}</option>)}
                         </select>
                       </td>
+                      {form.delivery_charges === 'Chargeable' && (
+                        <td className="py-2 pr-2">
+                          <input type="number" min="0" value={item.delivery} onChange={e => setItem(idx, 'delivery', e.target.value)}
+                            className="border border-gray-200 rounded px-2 py-1 text-sm w-28 text-right focus:outline-none focus:border-indigo-300"
+                            placeholder="0" />
+                        </td>
+                      )}
                       <td className="py-2 text-right font-medium text-sm pr-2">
                         {total > 0 ? `₹${total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
                       </td>
@@ -513,13 +539,13 @@ export default function NewPR() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={9} className="pt-3">
+                  <td colSpan={form.delivery_charges === 'Chargeable' ? 10 : 9} className="pt-3">
                     <button type="button" onClick={addItem}
                       className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ Add Item</button>
                   </td>
                 </tr>
                 <tr className="border-t-2 border-gray-200">
-                  <td colSpan={7} className="pt-3 text-right font-semibold text-sm">Grand Total (incl. GST)</td>
+                  <td colSpan={form.delivery_charges === 'Chargeable' ? 8 : 7} className="pt-3 text-right font-semibold text-sm">Grand Total (incl. GST + Delivery)</td>
                   <td className="pt-3 text-right font-bold text-base pr-2">
                     {grandTotal > 0 ? `₹${grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
                   </td>

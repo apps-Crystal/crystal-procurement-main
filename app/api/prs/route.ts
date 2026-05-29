@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { site, purpose, vendor_id, category, payment_stages,
+    const { site, purpose, vendor_id, category, payment_stages, specific_payment_terms,
       delivery_terms, delivery_location, delivery_charges, expected_delivery,
       procurement_type, is_reimbursable, requisitioned_by, warranty_amc,
       quality_terms, special_terms, other_terms, freight_amount,
@@ -82,7 +82,8 @@ export async function POST(req: NextRequest) {
       const rate = parseFloat(item.rate) || 0;
       const qty = parseFloat(item.qty) || 0;
       const gst = parseFloat(item.gst) || 0;
-      return sum + (qty * rate * (1 + gst / 100));
+      const delivery = parseFloat(item.delivery) || 0;
+      return sum + (qty * rate * (1 + gst / 100)) + delivery;
     }, 0);
 
     const fieldMap: Record<string, any> = {
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       Requested_By: raised_by,
       Vendor_ID: vendor_id || '',
       Purchase_Category: category,
-      Payment_Terms: paymentSummary,
+      Payment_Terms: specific_payment_terms || paymentSummary,
       Advance: payment_stages?.Advance || '',
       'Before Delivery': payment_stages?.['Before Delivery'] || '',
       Running: payment_stages?.Running || '',
@@ -147,7 +148,8 @@ export async function POST(req: NextRequest) {
       const rate = parseFloat(item.rate) || 0;
       const qty = parseFloat(item.qty) || 0;
       const gst = parseFloat(item.gst) || 0;
-      const lineTotal = qty * rate * (1 + gst / 100);
+      const delivery = parseFloat(item.delivery) || 0;
+      const lineTotal = (qty * rate * (1 + gst / 100)) + delivery;
       await writeNewRow('PR_Items', [
         pr_id, i + 1, item.name, item.purpose || '', qty,
         item.uom, rate, gst, item.warranty || '', lineTotal.toFixed(2),
