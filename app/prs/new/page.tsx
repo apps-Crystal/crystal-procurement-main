@@ -6,6 +6,7 @@ import Link from 'next/link';
 const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
 const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
 const PROC_TYPES = ['Material', 'Service'];
+const DELIVERY_CHARGES = ['Included', 'Chargeable', 'Extra at Actuals'];
 
 let _itemId = 0;
 function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
@@ -34,9 +35,13 @@ export default function NewPR() {
     payment_adv: '', payment_before: '', payment_running: '', payment_postdel: '', payment_postcomp: '', payment_retention: '',
     delivery_terms: '',
     delivery_location: '',
+    delivery_charges: '',
     expected_delivery_date: '',
     is_reimbursable: 'No',
     warranty_amc: '',
+    quality_terms: '',
+    special_terms: '',
+    other_terms: '',
   });
   const [items, setItems] = useState([newItem()]);
   const [vendorSearch, setVendorSearch] = useState('');
@@ -149,9 +154,13 @@ export default function NewPR() {
         },
         delivery_terms: form.delivery_terms,
         delivery_location: form.delivery_location,
+        delivery_charges: form.delivery_charges,
         expected_delivery: form.expected_delivery_date,
         is_reimbursable: form.is_reimbursable,
         warranty_amc: form.warranty_amc,
+        quality_terms: form.quality_terms,
+        special_terms: form.special_terms,
+        other_terms: form.other_terms,
         vendor_order_ref_no: form.vendor_order_ref_no,
         remarks: form.remarks,
         upload_quotation: quotationUrl,
@@ -238,6 +247,20 @@ export default function NewPR() {
                 placeholder="Brief description of what is needed and why..." />
             </div>
             <div>
+              <label className="block text-xs text-gray-500 mb-1">Customer Reimbursable?</label>
+              <select value={form.is_reimbursable} onChange={e => set('is_reimbursable', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </div>
+          </div>
+        </Section>
+
+        {/* Delivery */}
+        <Section title="Delivery">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
               <label className="block text-xs text-gray-500 mb-1">Expected Delivery Date</label>
               <input type="date" value={form.expected_delivery_date} onChange={e => set('expected_delivery_date', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300" />
@@ -251,24 +274,48 @@ export default function NewPR() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Customer Reimbursable?</label>
-              <select value={form.is_reimbursable} onChange={e => set('is_reimbursable', e.target.value)}
+              <label className="block text-xs text-gray-500 mb-1">Delivery Charges</label>
+              <select value={form.delivery_charges} onChange={e => set('delivery_charges', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
-                <option>No</option>
-                <option>Yes</option>
+                <option value="">Select delivery charges...</option>
+                {DELIVERY_CHARGES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Delivery Terms</label>
+            <div className="col-span-1 sm:col-span-2 lg:col-span-3">
+              <label className="block text-xs text-gray-500 mb-1">Special Delivery Terms</label>
               <input value={form.delivery_terms} onChange={e => set('delivery_terms', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
-                placeholder="FOR Destination / Ex-Works..." />
+                placeholder="FOR Destination / Ex-Works / specific handling..." />
             </div>
+          </div>
+        </Section>
+
+        {/* Warranty */}
+        <Section title="Warranty">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Warranty / AMC</label>
               <input value={form.warranty_amc} onChange={e => set('warranty_amc', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
                 placeholder="1 year / 2 year AMC..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Quality Terms</label>
+              <input value={form.quality_terms} onChange={e => set('quality_terms', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="ISI / OEM / inspection..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Special Terms</label>
+              <input value={form.special_terms} onChange={e => set('special_terms', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="Any special conditions..." />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Other Terms</label>
+              <input value={form.other_terms} onChange={e => set('other_terms', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
+                placeholder="Anything else..." />
             </div>
           </div>
         </Section>

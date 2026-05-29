@@ -43,8 +43,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { site, purpose, vendor_id, category, payment_stages,
-      delivery_terms, delivery_location, expected_delivery, procurement_type,
-      is_reimbursable, requisitioned_by, warranty_amc, freight_amount,
+      delivery_terms, delivery_location, delivery_charges, expected_delivery,
+      procurement_type, is_reimbursable, requisitioned_by, warranty_amc,
+      quality_terms, special_terms, other_terms, freight_amount,
       installation_amount, upload_quotation, final_agreed_pi, supporting_docs,
       vendor_order_ref_no, remarks, items } = body;
 
@@ -101,7 +102,10 @@ export async function POST(req: NextRequest) {
       'Post Completion': payment_stages?.['Post Completion'] || '',
       Retention: payment_stages?.Retention || '',
       Delivery_Terms: delivery_terms || '',
+      'Delivery Terms': delivery_terms || '',
       Delivery_Location: delivery_location || '',
+      Delivery_Charges: delivery_charges || '',
+      'Delivery Charges': delivery_charges || '',
       Is_Customer_Reimbursable: is_reimbursable || 'No',
       Total_Incl_GST: totalIncGST.toFixed(2),
       Status_Code: 'PR_SUBMITTED',
@@ -111,6 +115,12 @@ export async function POST(req: NextRequest) {
       Approver_Remarks: '',
       Expected_Delivery_Date: expected_delivery || '',
       Warranty_AMC: warranty_amc || '',
+      Quality: quality_terms || '',
+      Quality_Terms: quality_terms || '',
+      Special: special_terms || '',
+      Special_Terms: special_terms || '',
+      'Other Terms': other_terms || '',
+      Other_Terms: other_terms || '',
       Requisition_By: requisitioned_by || '',
       PR_Approved_By: '',
       PR_Approved_DateTime: '',
