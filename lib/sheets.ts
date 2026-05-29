@@ -46,26 +46,51 @@ export async function appendRow(range: string, values: (string | number | null)[
   });
 }
 
-// Deterministic row write. Two reasons we don't use the plain `appendRow`:
-// 1. `values.append` with just the sheet name as range lets Google auto-detect
-//    the "logical table", which mis-aligns columns when there are gaps in the
-//    sheet (we saw PR_ID landing in column AC instead of A).
-// 2. `values.update` would let us pick the exact row, but it does NOT extend
-//    the sheet grid, so writing past the last allocated row fails.
-// Anchoring `append` at `A1` with `INSERT_ROWS` fixes both: the table is
-// detected from A1 (so column A is the start), and INSERT_ROWS grows the grid.
+// Deterministic row write.
+// Even `values.append` with INSERT_ROWS and an A1 anchor mis-places rows when
+// the sheet has stray data far to the right from older broken writes — Google
+// detects a wider "table" and shifts new rows accordingly. So we bypass
+// auto-detect entirely:
+//   1. Read the sheet to find the next empty row.
+//   2. Expand the sheet's row grid if our target row is beyond it.
+//   3. `values.update` at exactly `SheetName!A{row}` — no auto-detect possible.
 export async function writeNewRow(sheetName: string, values: (string | number | null)[]): Promise<number> {
   const sheets = await getSheets();
-  const res = await sheets.spreadsheets.values.append({
+  const existing = await readSheet(sheetName);
+  const nextRow = existing.length + 1;
+
+  // Make sure the grid is large enough before writing.
+  const meta = await sheets.spreadsheets.get({
     spreadsheetId: SHEET_ID,
-    range: `${sheetName}!A1`,
+    fields: 'sheets(properties(sheetId,title,gridProperties(rowCount)))',
+  });
+  const sheet = meta.data.sheets?.find(s => s.properties?.title === sheetName);
+  const sheetId = sheet?.properties?.sheetId;
+  const currentRows = sheet?.properties?.gridProperties?.rowCount || 0;
+  if (sheetId !== undefined && sheetId !== null && currentRows < nextRow) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: {
+        requests: [{
+          updateSheetProperties: {
+            properties: {
+              sheetId,
+              gridProperties: { rowCount: nextRow + 500 },
+            },
+            fields: 'gridProperties.rowCount',
+          },
+        }],
+      },
+    });
+  }
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${sheetName}!A${nextRow}`,
     valueInputOption: 'USER_ENTERED',
-    insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
   });
-  const updated = res.data.updates?.updatedRange || '';
-  const match = updated.match(/!A(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
+  return nextRow;
 }
 
 export async function updateRow(range: string, values: (string | number | null)[]): Promise<void> {
