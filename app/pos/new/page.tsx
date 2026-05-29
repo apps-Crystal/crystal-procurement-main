@@ -142,7 +142,6 @@ function NewPOInner() {
           gst: it.gst,
           line_no: i + 1,
         })),
-        created_by: 'Yatish Agarwal',
         po_pdf_url: poPdfUrl,
         po_pdf_file_id: poPdfId,
       }),

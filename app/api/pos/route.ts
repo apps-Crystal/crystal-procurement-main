@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSheet, rowsToObjects, writeNewRow, getNextId, getDrive } from '@/lib/sheets';
+import { getCurrentUser } from '@/lib/current-user';
 
 export async function GET(req: NextRequest) {
   try {
@@ -62,7 +63,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { pr_id, site, vendor_id, vendor_name, tally_no, po_date, payment_terms,
       delivery_terms, expected_delivery_date, remarks, freight_amount, installation_amount,
-      items, created_by, po_pdf_url, po_pdf_file_id } = body;
+      items, po_pdf_url, po_pdf_file_id } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    }
+    const created_by = currentUser.name?.trim() || currentUser.email;
 
     const now = new Date();
     const month = now.toLocaleString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' })
@@ -117,8 +124,10 @@ export async function POST(req: NextRequest) {
       Total_Incl_GST: totalIncGST.toFixed(2),
       Status_Code: 'PO_POSTED',
       Status_Label: 'Posted',
-      Created_By: created_by || '',
+      Created_By: created_by,
       Timestamp: timestamp,
+      Last_Action_By: created_by,
+      Last_Action_At: timestamp,
       Remarks: remarks || '',
       Has_Freight: freight_amount ? 'Yes' : 'No',
       Freight_Amount: freight_amount || 0,
