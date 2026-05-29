@@ -42,7 +42,7 @@ export default function GRNDetail() {
     const res = await fetch(`/api/grns/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: modalAction, approved_by: 'Yatish Agarwal', remarks }),
+      body: JSON.stringify({ action: modalAction, remarks }),
     });
     const result = await res.json();
     if (result.success) {

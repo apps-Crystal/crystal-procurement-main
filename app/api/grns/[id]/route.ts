@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { batchRead, readSheet, rowsToObjects, updateRow, findRowIndex } from '@/lib/sheets';
+import { getCurrentUser } from '@/lib/current-user';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -32,7 +33,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const grnId = decodeURIComponent(id);
     const body = await req.json();
-    const { action, approved_by, remarks } = body;
+    const { action, remarks } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    }
+    const actorName = currentUser.name?.trim() || currentUser.email;
+    const actorEmail = currentUser.email;
 
     const rows = await readSheet('GRN_Master');
     const headers = rows[0];
@@ -49,7 +57,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (action === 'approve') {
       setCol('Status', 'Approved');
-      setCol('Approved_By', approved_by || '');
+      setCol('Approved_By', actorName);
+      setCol('Approved_By_Name', actorName);
+      setCol('Approved_By_Email', actorEmail);
       setCol('Approved_At', now);
       setCol('Approver_Remarks', remarks || '');
     } else if (action === 'flag') {
@@ -61,7 +71,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     setCol('Last_Action_At', now);
-    setCol('Last_Action_By', approved_by || '');
+    setCol('Last_Action_By', actorName);
+    setCol('Last_Action_By_Name', actorName);
+    setCol('Last_Action_By_Email', actorEmail);
 
     await updateRow(`GRN_Master!A${rowIdx}`, row);
     return NextResponse.json({ success: true });
