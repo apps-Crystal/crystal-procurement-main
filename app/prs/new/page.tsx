@@ -9,8 +9,8 @@ const PROC_TYPES = ['Material', 'Service'];
 const DELIVERY_CHARGES = ['Included', 'Chargeable', 'Extra at Actuals'];
 
 let _itemId = 0;
-function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18', delivery: '' }; }
-const EMPTY_ITEM = { item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18', delivery: '' };
+function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
+const EMPTY_ITEM = { item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' };
 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -37,6 +37,7 @@ export default function NewPR() {
     delivery_terms: '',
     delivery_location: '',
     delivery_charges: '',
+    delivery_charge_amount: '',
     expected_delivery_date: '',
     is_reimbursable: 'No',
     warranty_amc: '',
@@ -108,11 +109,12 @@ export default function NewPR() {
     const qty = parseFloat(item.qty) || 0;
     const rate = parseFloat(item.rate) || 0;
     const gst = parseFloat(item.gst) || 0;
-    const delivery = parseFloat(item.delivery) || 0;
-    return qty * rate * (1 + gst / 100) + delivery;
+    return qty * rate * (1 + gst / 100);
   }
 
-  const grandTotal = items.reduce((s, it) => s + lineTotal(it), 0);
+  const itemsTotal = items.reduce((s, it) => s + lineTotal(it), 0);
+  const deliveryFee = form.delivery_charges === 'Chargeable' ? (parseFloat(form.delivery_charge_amount) || 0) : 0;
+  const grandTotal = itemsTotal + deliveryFee;
 
   function paymentSummary() {
     const parts = [
@@ -158,6 +160,7 @@ export default function NewPR() {
         delivery_terms: form.delivery_terms,
         delivery_location: form.delivery_location,
         delivery_charges: form.delivery_charges,
+        delivery_charge_amount: form.delivery_charge_amount,
         expected_delivery: form.expected_delivery_date,
         is_reimbursable: form.is_reimbursable,
         warranty_amc: form.warranty_amc,
@@ -177,7 +180,6 @@ export default function NewPR() {
           uom: it.uom,
           rate: it.rate,
           gst: it.gst,
-          delivery: it.delivery,
           line_total: lineTotal(it).toFixed(2),
           })),
         }),
@@ -476,9 +478,6 @@ export default function NewPR() {
                   <th className="text-left pb-2 pl-2 min-w-20">UOM</th>
                   <th className="text-right pb-2 min-w-28">Rate (₹)</th>
                   <th className="text-right pb-2">GST %</th>
-                  {form.delivery_charges === 'Chargeable' && (
-                    <th className="text-right pb-2 min-w-28">Delivery (₹)</th>
-                  )}
                   <th className="text-right pb-2 min-w-28">Total</th>
                   <th className="pb-2" />
                 </tr>
@@ -518,13 +517,6 @@ export default function NewPR() {
                           {['0', '5', '12', '18', '28'].map(g => <option key={g}>{g}</option>)}
                         </select>
                       </td>
-                      {form.delivery_charges === 'Chargeable' && (
-                        <td className="py-2 pr-2">
-                          <input type="number" min="0" value={item.delivery} onChange={e => setItem(idx, 'delivery', e.target.value)}
-                            className="border border-gray-200 rounded px-2 py-1 text-sm w-28 text-right focus:outline-none focus:border-indigo-300"
-                            placeholder="0" />
-                        </td>
-                      )}
                       <td className="py-2 text-right font-medium text-sm pr-2">
                         {total > 0 ? `₹${total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
                       </td>
@@ -539,13 +531,29 @@ export default function NewPR() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={form.delivery_charges === 'Chargeable' ? 10 : 9} className="pt-3">
+                  <td colSpan={9} className="pt-3">
                     <button type="button" onClick={addItem}
                       className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ Add Item</button>
                   </td>
                 </tr>
+                {form.delivery_charges === 'Chargeable' && (
+                  <tr>
+                    <td colSpan={7} className="pt-3 text-right font-medium text-sm text-gray-600">Delivery Charges</td>
+                    <td className="pt-3 pr-2">
+                      <div className="relative">
+                        <input type="number" min="0" value={form.delivery_charge_amount} onChange={e => set('delivery_charge_amount', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full text-right focus:outline-none focus:border-indigo-300 pl-6"
+                          placeholder="0" />
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₹</span>
+                      </div>
+                    </td>
+                    <td />
+                  </tr>
+                )}
                 <tr className="border-t-2 border-gray-200">
-                  <td colSpan={form.delivery_charges === 'Chargeable' ? 8 : 7} className="pt-3 text-right font-semibold text-sm">Grand Total (incl. GST + Delivery)</td>
+                  <td colSpan={7} className="pt-3 text-right font-semibold text-sm">
+                    Grand Total ({form.delivery_charges === 'Chargeable' ? 'incl. GST + Delivery' : 'incl. GST'})
+                  </td>
                   <td className="pt-3 text-right font-bold text-base pr-2">
                     {grandTotal > 0 ? `₹${grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
                   </td>
