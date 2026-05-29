@@ -27,6 +27,56 @@ function NewGRNInner() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Document uploads
+  const [invoice, setInvoice] = useState<{ url: string; id: string; name: string } | null>(null);
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [lr, setLr] = useState<{ url: string; id: string; name: string } | null>(null);
+  const [uploadingLr, setUploadingLr] = useState(false);
+  const [photos, setPhotos] = useState<{ url: string; id: string; name: string }[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [otherDocs, setOtherDocs] = useState<{ url: string; id: string; name: string }[]>([]);
+  const [uploadingOther, setUploadingOther] = useState(false);
+
+  async function uploadToDrive(file: File, folder: string, prefix: string): Promise<{ url: string; id: string; name: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', folder);
+    fd.append('prefix', prefix);
+    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Upload failed (${res.status})`);
+    return { url: data.url, id: data.id, name: file.name };
+  }
+
+  async function pickInvoice(file: File) {
+    setUploadingInvoice(true); setError('');
+    try { setInvoice(await uploadToDrive(file, '12B5kiRd-_zfEdr0uv0gMKoe6xLl3caUR', 'INVOICE_DRAFT')); }
+    catch (e: any) { setError(`Invoice upload failed: ${e.message}`); setInvoice(null); }
+    finally { setUploadingInvoice(false); }
+  }
+  async function pickLr(file: File) {
+    setUploadingLr(true); setError('');
+    try { setLr(await uploadToDrive(file, '1Jd8k5mN99OWrzxre9-QWLeTihF3ew-mc', 'LR_DRAFT')); }
+    catch (e: any) { setError(`LR upload failed: ${e.message}`); setLr(null); }
+    finally { setUploadingLr(false); }
+  }
+  async function pickPhoto(file: File) {
+    setUploadingPhoto(true); setError('');
+    try {
+      const up = await uploadToDrive(file, '1teBR3wRBYJ8As7jAkgNxz-e1b_sJGEF2', 'PHOTO_DRAFT');
+      setPhotos(p => [...p, up]);
+    } catch (e: any) { setError(`Photo upload failed: ${e.message}`); }
+    finally { setUploadingPhoto(false); }
+  }
+  async function pickOther(file: File) {
+    setUploadingOther(true); setError('');
+    try {
+      const up = await uploadToDrive(file, '163I9X_JEzEj8h86p7-1gcj0isZMlh8Q4', 'OTHER_DRAFT');
+      setOtherDocs(p => [...p, up]);
+    } catch (e: any) { setError(`Document upload failed: ${e.message}`); }
+    finally { setUploadingOther(false); }
+  }
+
   // Auto-load PO if prefilled
   useEffect(() => {
     if (prefilledPO) loadPO(prefilledPO);
@@ -91,6 +141,10 @@ function NewGRNInner() {
     if (!selectedPO) { setError('Please select a PO'); return; }
     if (!form.invoice_number.trim()) { setError('Invoice number is required'); return; }
     if (!form.invoice_value) { setError('Invoice value is required'); return; }
+    if (!invoice) { setError('Invoice document is required'); return; }
+    if (uploadingInvoice || uploadingLr || uploadingPhoto || uploadingOther) {
+      setError('Please wait for file uploads to finish'); return;
+    }
     const validItems = items.filter(it => parseFloat(it.received_qty) > 0);
     if (validItems.length === 0) { setError('At least one item with received quantity is required'); return; }
 
@@ -109,8 +163,10 @@ function NewGRNInner() {
         invoice_date: form.invoice_date,
         lr_number: form.lr_number,
         vehicle_number: form.vehicle_number,
-        created_by_name: 'Yatish Agarwal',
-        created_by_email: 'yatish@crystalgroup.in',
+        invoice: invoice ? { url: invoice.url, file_id: invoice.id } : null,
+        lr_doc: lr ? { url: lr.url, file_id: lr.id } : null,
+        photos: photos.map(p => ({ url: p.url, file_id: p.id })),
+        other_docs: otherDocs.map(d => ({ url: d.url, file_id: d.id })),
         items: validItems.map((it, i) => ({
           item_name: it.item_name,
           ordered_qty: it.ordered_qty,
@@ -292,6 +348,121 @@ function NewGRNInner() {
                     </span>
                   )}
                 </span>
+              </div>
+            </Section>
+
+            {/* Documents */}
+            <Section title="Documents">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Invoice — mandatory single */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Invoice <span className="text-red-400">*</span>
+                  </label>
+                  {!invoice && !uploadingInvoice && (
+                    <label className="flex items-center gap-2 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600">
+                      <span>Choose invoice...</span>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) pickInvoice(f); }} />
+                    </label>
+                  )}
+                  {uploadingInvoice && (
+                    <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">
+                      <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Uploading...</span>
+                    </div>
+                  )}
+                  {invoice && !uploadingInvoice && (
+                    <div className="flex items-center justify-between gap-2 border border-green-200 bg-green-50 rounded-lg px-3 py-2 text-sm">
+                      <a href={invoice.url} target="_blank" rel="noreferrer" className="text-green-700 hover:underline truncate">
+                        ✓ {invoice.name}
+                      </a>
+                      <button type="button" onClick={() => setInvoice(null)} className="text-xs text-gray-400 hover:text-red-500">✕</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* LR / Delivery Challan — optional single */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">LR / Delivery Challan <span className="text-gray-300">(optional)</span></label>
+                  {!lr && !uploadingLr && (
+                    <label className="flex items-center gap-2 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600">
+                      <span>Choose file...</span>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) pickLr(f); }} />
+                    </label>
+                  )}
+                  {uploadingLr && (
+                    <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">
+                      <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Uploading...</span>
+                    </div>
+                  )}
+                  {lr && !uploadingLr && (
+                    <div className="flex items-center justify-between gap-2 border border-green-200 bg-green-50 rounded-lg px-3 py-2 text-sm">
+                      <a href={lr.url} target="_blank" rel="noreferrer" className="text-green-700 hover:underline truncate">
+                        ✓ {lr.name}
+                      </a>
+                      <button type="button" onClick={() => setLr(null)} className="text-xs text-gray-400 hover:text-red-500">✕</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Photos — optional, multiple */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Photos <span className="text-gray-300">(optional, multiple)</span></label>
+                  <div className="space-y-1.5">
+                    {photos.map((p, i) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 border border-green-200 bg-green-50 rounded-lg px-3 py-2 text-sm">
+                        <a href={p.url} target="_blank" rel="noreferrer" className="text-green-700 hover:underline truncate">
+                          ✓ {p.name}
+                        </a>
+                        <button type="button" onClick={() => setPhotos(arr => arr.filter((_, idx) => idx !== i))} className="text-xs text-gray-400 hover:text-red-500">✕</button>
+                      </div>
+                    ))}
+                    {uploadingPhoto && (
+                      <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">
+                        <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Uploading...</span>
+                      </div>
+                    )}
+                    {!uploadingPhoto && (
+                      <label className="flex items-center gap-2 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600">
+                        <span>+ Add photo</span>
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) { pickPhoto(f); e.target.value = ''; } }} />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Other documents — optional, multiple */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Other Documents <span className="text-gray-300">(optional, multiple)</span></label>
+                  <div className="space-y-1.5">
+                    {otherDocs.map((d, i) => (
+                      <div key={d.id} className="flex items-center justify-between gap-2 border border-green-200 bg-green-50 rounded-lg px-3 py-2 text-sm">
+                        <a href={d.url} target="_blank" rel="noreferrer" className="text-green-700 hover:underline truncate">
+                          ✓ {d.name}
+                        </a>
+                        <button type="button" onClick={() => setOtherDocs(arr => arr.filter((_, idx) => idx !== i))} className="text-xs text-gray-400 hover:text-red-500">✕</button>
+                      </div>
+                    ))}
+                    {uploadingOther && (
+                      <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">
+                        <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Uploading...</span>
+                      </div>
+                    )}
+                    {!uploadingOther && (
+                      <label className="flex items-center gap-2 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600">
+                        <span>+ Add document</span>
+                        <input type="file" className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) { pickOther(f); e.target.value = ''; } }} />
+                      </label>
+                    )}
+                  </div>
+                </div>
               </div>
             </Section>
 
