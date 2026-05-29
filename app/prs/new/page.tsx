@@ -3,9 +3,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Ahmedabad', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
+const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Bhubaneswar', 'Dhulagarh', 'Dankuni', 'Mumbai', 'Vavdi', 'Taloja'];
 const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
-const PROC_TYPES = ['Goods', 'Services', 'Works'];
+const PROC_TYPES = ['Material', 'Service'];
 const PAYMENT_TYPES = ['Advance', 'Credit', 'Advance + Credit'];
 
 let _itemId = 0;
@@ -27,7 +27,7 @@ export default function NewPR() {
   const [form, setForm] = useState({
     site: '',
     category: '',
-    procurement_type: 'Goods',
+    procurement_type: 'Material',
     payment_type: '',
     vendor_id: '',
     pr_purpose: '',
@@ -36,7 +36,6 @@ export default function NewPR() {
     delivery_location: '',
     expected_delivery_date: '',
     is_reimbursable: 'No',
-    requisition_by: '',
     warranty_amc: '',
   });
   const [items, setItems] = useState([newItem()]);
@@ -151,7 +150,6 @@ export default function NewPR() {
         delivery_location: form.delivery_location,
         expected_delivery: form.expected_delivery_date,
         is_reimbursable: form.is_reimbursable,
-        requisitioned_by: form.requisition_by,
         warranty_amc: form.warranty_amc,
         upload_quotation: quotationUrl,
         final_agreed_pi: piUrl,
@@ -243,9 +241,11 @@ export default function NewPR() {
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Delivery Location</label>
-              <input value={form.delivery_location} onChange={e => set('delivery_location', e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
-                placeholder="Store / Floor / Block..." />
+              <select value={form.delivery_location} onChange={e => set('delivery_location', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
+                <option value="">Select delivery location...</option>
+                {SITES.map(s => <option key={s}>{s}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Customer Reimbursable?</label>
@@ -260,12 +260,6 @@ export default function NewPR() {
               <input value={form.delivery_terms} onChange={e => set('delivery_terms', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
                 placeholder="FOR Destination / Ex-Works..." />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Requisitioned By</label>
-              <input value={form.requisition_by} onChange={e => set('requisition_by', e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300"
-                placeholder="Department / Person" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Warranty / AMC</label>

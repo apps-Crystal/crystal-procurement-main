@@ -22,7 +22,6 @@ const SITES = [
   { label: 'Pune', value: 'Pune' },
   { label: 'Kheda', value: 'Kheda' },
   { label: 'Kolkata', value: 'Kolkata' },
-  { label: 'Ahmedabad', value: 'Ahmedabad' },
   { label: 'Bhubaneswar', value: 'Bhubaneswar' },
   { label: 'Dhulagarh', value: 'Dhulagarh' },
   { label: 'Dankuni', value: 'Dankuni' },
