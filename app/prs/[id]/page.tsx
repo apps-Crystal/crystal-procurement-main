@@ -27,6 +27,10 @@ export default function PRDetail() {
   const [showModal, setShowModal] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [acting, setActing] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     fetch(`/api/prs/${id}`)
@@ -44,11 +48,46 @@ export default function PRDetail() {
     const result = await res.json();
     if (result.success) {
       setShowModal(false);
-      // Refresh data
       const fresh = await fetch(`/api/prs/${id}`).then(r => r.json());
       setData(fresh);
     }
     setActing(false);
+  }
+
+  function startEdit() {
+    const init: Record<string, string> = {};
+    Object.entries(data?.pr || {}).forEach(([k, v]) => { init[k] = v == null ? '' : String(v); });
+    setEditForm(init);
+    setEditError('');
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setEditForm({});
+    setEditError('');
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    setEditError('');
+    try {
+      const res = await fetch(`/api/prs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', updates: editForm }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || `Save failed (${res.status})`);
+      const fresh = await fetch(`/api/prs/${id}`).then(r => r.json());
+      setData(fresh);
+      setEditing(false);
+      setEditForm({});
+    } catch (e: any) {
+      setEditError(e.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return (
@@ -117,26 +156,48 @@ export default function PRDetail() {
             <div className="text-sm text-gray-500">{pr.Site} · {pr.Purchase_Category} · Raised by {pr.Requested_By}</div>
           </div>
           <div className="flex gap-2">
-            {canApprove && (
-              <button onClick={() => setShowModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">
-                Approve / Reject
-              </button>
-            )}
-            {canCreatePO && (
-              <Link href={`/pos/new?pr=${encodeURIComponent(pr.PR_ID)}`}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700">
-                Create PO →
-              </Link>
-            )}
-            {pos?.length > 0 && (
-              <Link href={`/pos/${encodeURIComponent(pos[0].PO_ID)}`}
-                className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
-                View PO →
-              </Link>
+            {editing ? (
+              <>
+                <button onClick={cancelEdit} disabled={saving}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50">
+                  Cancel
+                </button>
+                <button onClick={saveEdit} disabled={saving}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={startEdit}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
+                  Edit
+                </button>
+                {canApprove && (
+                  <button onClick={() => setShowModal(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">
+                    Approve / Reject
+                  </button>
+                )}
+                {canCreatePO && (
+                  <Link href={`/pos/new?pr=${encodeURIComponent(pr.PR_ID)}`}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700">
+                    Create PO →
+                  </Link>
+                )}
+                {pos?.length > 0 && (
+                  <Link href={`/pos/${encodeURIComponent(pos[0].PO_ID)}`}
+                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
+                    View PO →
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>
+        {editError && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{editError}</div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-5">
           <div className="flex-1 min-w-0 space-y-4">
@@ -154,11 +215,17 @@ export default function PRDetail() {
                   'Approver_Remarks',
                   'Upload Quotation', 'Final Agreed PI', 'Supporting Docs', 'PR_PDF_Link', 'Approval_Link', 'Approved_PR_Link',
                 ]);
-                // Vendor is shown via vendor card or shown here only as fallback ID
+                // Columns not editable even in edit mode
+                const readOnly = new Set([
+                  'Total_Incl_GST', 'Vendor_ID',
+                ]);
                 const niceLabel = (k: string) => k.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
-                const entries = Object.entries(pr)
-                  .filter(([k, v]) => !skip.has(k) && v !== '' && v !== null && v !== undefined && String(v).trim() !== '');
-                // Custom rendering for a few special fields
+                // When editing, show every non-skipped column (including currently empty ones).
+                // When viewing, only show non-empty ones.
+                const source: Record<string, any> = editing ? editForm : pr;
+                const entries = editing
+                  ? Object.entries(source).filter(([k]) => !skip.has(k))
+                  : Object.entries(source).filter(([k, v]) => !skip.has(k) && v !== '' && v !== null && v !== undefined && String(v).trim() !== '');
                 const customRender: Record<string, (v: any) => any> = {
                   Vendor_ID: v => vendor?.Company_Name ? `${vendor.Company_Name} (${v})` : v,
                   Total_Incl_GST: v => fmt(v),
@@ -179,10 +246,21 @@ export default function PRDetail() {
                     {entries.map(([k, v]) => {
                       const label = customLabel[k] || niceLabel(k);
                       const value = customRender[k] ? customRender[k](v) : String(v);
+                      const isLong = String(v || '').length > 60;
+                      const InputTag: any = isLong ? 'textarea' : 'input';
                       return (
                         <div key={k}>
                           <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                          <div className="font-medium break-words">{value}</div>
+                          {editing && !readOnly.has(k) ? (
+                            <InputTag
+                              {...(isLong ? { rows: 2 } : {})}
+                              value={editForm[k] ?? ''}
+                              onChange={(e: any) => setEditForm(p => ({ ...p, [k]: e.target.value }))}
+                              className="border border-gray-200 rounded-lg px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300 resize-none"
+                            />
+                          ) : (
+                            <div className="font-medium break-words">{value}</div>
+                          )}
                         </div>
                       );
                     })}

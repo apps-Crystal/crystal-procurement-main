@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const decodedId = decodeURIComponent(id);
     const body = await req.json();
-    const { action, remarks } = body;
+    const { action, remarks, updates } = body;
 
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -50,17 +50,38 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const rowIdx = findRowIndex(rows, headers.indexOf('PR_ID'), decodedId);
     if (rowIdx === -1) return NextResponse.json({ error: 'PR not found' }, { status: 404 });
 
-    const statusCodeCol = headers.indexOf('Status_Code');
-    const statusLabelCol = headers.indexOf('Status_Label');
     const actionByCol = headers.indexOf('Last_Action_By');
     const actionAtCol = headers.indexOf('Last_Action_At');
     const remarksCol = headers.indexOf('Approver_Remarks');
     const approvedByCol = headers.indexOf('PR_Approved_By');
     const approvedAtCol = headers.indexOf('PR_Approved_DateTime');
+    const statusCodeCol = headers.indexOf('Status_Code');
+    const statusLabelCol = headers.indexOf('Status_Label');
 
     const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const row = rows[rowIdx - 1];
 
+    // Field edit
+    if (action === 'update') {
+      // Columns the user is not allowed to change directly.
+      const locked = new Set([
+        'PR_ID', 'Timestamp', 'Date_of_Requisition',
+        'Status_Code', 'Status_Label',
+        'Requested_By', 'PR_Approved_By', 'PR_Approved_DateTime',
+        'Last_Action_By', 'Last_Action_At',
+      ]);
+      for (const [col, val] of Object.entries(updates || {})) {
+        if (locked.has(col)) continue;
+        const i = headers.indexOf(col);
+        if (i >= 0) row[i] = val == null ? '' : String(val);
+      }
+      if (actionByCol >= 0) row[actionByCol] = approver;
+      if (actionAtCol >= 0) row[actionAtCol] = now;
+      await updateRow(`PR_Master!A${rowIdx}`, row);
+      return NextResponse.json({ success: true });
+    }
+
+    // Approve / reject
     const statusMap: Record<string, [string, string]> = {
       approve: ['PR_APPROVED', 'PR Approved'],
       reject: ['PR_REJECTED', 'PR Rejected'],
