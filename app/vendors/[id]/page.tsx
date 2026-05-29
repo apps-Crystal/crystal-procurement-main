@@ -12,10 +12,14 @@ function fmt(n: string | number) {
 }
 
 const KYC_DOCS = [
-  { key: 'GST_Certificate_Link', label: 'GST Certificate' },
-  { key: 'PanCard_Link', label: 'PAN Card' },
-  { key: 'Cancelled_Cheque_Link', label: 'Cancelled Cheque' },
-  { key: 'MSME_Certificate_Link', label: 'MSME Certificate' },
+  { key: 'GST_Certificate_Link', label: 'GST Certificate',
+    folder: '1wCpfXHOsMLKJRwKK6G2UHiEptWBfYO1d', namePrefix: 'GST' },
+  { key: 'PanCard_Link',         label: 'PAN Card',
+    folder: '1uwSKKG7HwO54sFuUhcWhkl9Jc6bwBGM1', namePrefix: 'PAN' },
+  { key: 'Cancelled_Cheque_Link',label: 'Cancelled Cheque',
+    folder: '1_wLU_ysRR9leStWixn9ThWrS8t6uHaRq', namePrefix: 'CHEQUE' },
+  { key: 'MSME_Certificate_Link',label: 'MSME Certificate',
+    folder: '1LgU60dPaXXaZ0heBlb0QY-d-TIkasFYQ', namePrefix: 'MSME' },
 ];
 
 export default function VendorDetail() {
@@ -25,6 +29,30 @@ export default function VendorDetail() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingKyc, setUploadingKyc] = useState<Record<string, boolean>>({});
+  const [uploadError, setUploadError] = useState('');
+
+  async function uploadKyc(docKey: string, folder: string, namePrefix: string, file: File) {
+    const vendorId = form.Vendor_ID || data?.vendor?.Vendor_ID || id;
+    setUploadingKyc(p => ({ ...p, [docKey]: true }));
+    setUploadError('');
+    try {
+      const ext = file.name.lastIndexOf('.') > -1 ? file.name.slice(file.name.lastIndexOf('.')) : '';
+      const filename = `${vendorId}_${namePrefix}_1${ext}`;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', folder);
+      fd.append('filename', filename);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Upload failed (${res.status})`);
+      setForm((p: any) => ({ ...p, [docKey]: data.url }));
+    } catch (e: any) {
+      setUploadError(`${namePrefix} upload failed: ${e.message}`);
+    } finally {
+      setUploadingKyc(p => ({ ...p, [docKey]: false }));
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/vendors/${encodeURIComponent(id)}`)
@@ -33,6 +61,10 @@ export default function VendorDetail() {
   }, [id]);
 
   async function save() {
+    if (Object.values(uploadingKyc).some(Boolean)) {
+      setUploadError('Please wait for KYC uploads to finish');
+      return;
+    }
     setSaving(true);
     await fetch(`/api/vendors/${encodeURIComponent(id)}`, {
       method: 'PATCH',
@@ -158,27 +190,51 @@ export default function VendorDetail() {
             {/* KYC Documents */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">KYC Documents</div>
+              {uploadError && (
+                <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs">{uploadError}</div>
+              )}
               <div className="space-y-3">
-                {KYC_DOCS.map(doc => (
-                  <div key={doc.key} className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                      ${vendor[doc.key] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                      {vendor[doc.key] ? '✓' : '—'}
+                {KYC_DOCS.map(doc => {
+                  const currentUrl = editing ? (form[doc.key] || '') : (vendor[doc.key] || '');
+                  const isUploading = uploadingKyc[doc.key];
+                  return (
+                    <div key={doc.key} className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+                        ${currentUrl ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        {currentUrl ? '✓' : '—'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-700">{doc.label}</div>
+                      </div>
+                      {editing ? (
+                        <div className="flex items-center gap-2">
+                          {isUploading ? (
+                            <div className="flex items-center gap-2 border border-gray-200 rounded px-2 py-1 text-xs text-gray-500">
+                              <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                              <span>Uploading...</span>
+                            </div>
+                          ) : (
+                            <label className="border border-dashed border-gray-300 rounded px-2 py-1 text-xs text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600 whitespace-nowrap">
+                              {currentUrl ? 'Replace' : 'Choose file'}
+                              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) { uploadKyc(doc.key, doc.folder, doc.namePrefix, f); e.target.value = ''; } }} />
+                            </label>
+                          )}
+                          <input value={form[doc.key] || ''} onChange={e => setForm((p: any) => ({ ...p, [doc.key]: e.target.value }))}
+                            placeholder="or paste link..."
+                            className="border border-gray-200 rounded px-2 py-1 text-xs w-40 focus:outline-none focus:border-indigo-300" />
+                          {currentUrl && (
+                            <a href={currentUrl} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline whitespace-nowrap">View</a>
+                          )}
+                        </div>
+                      ) : currentUrl ? (
+                        <a href={currentUrl} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline">View →</a>
+                      ) : (
+                        <span className="text-xs text-gray-400">Not uploaded</span>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-700">{doc.label}</div>
-                    </div>
-                    {editing ? (
-                      <input value={form[doc.key] || ''} onChange={e => setForm((p: any) => ({ ...p, [doc.key]: e.target.value }))}
-                        placeholder="Paste link..."
-                        className="border border-gray-200 rounded px-2 py-1 text-xs w-48 focus:outline-none focus:border-indigo-300" />
-                    ) : vendor[doc.key] ? (
-                      <a href={vendor[doc.key]} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline">View →</a>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not uploaded</span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
