@@ -63,6 +63,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // Field edit
     if (action === 'update') {
+      // Only allow edits while the PR is still in submitted state.
+      const currentStatus = statusCodeCol >= 0 ? row[statusCodeCol] : '';
+      if (currentStatus !== 'PR_SUBMITTED') {
+        return NextResponse.json(
+          { error: `PR cannot be edited once its status is ${currentStatus || 'changed'}` },
+          { status: 403 },
+        );
+      }
       // Columns the user is not allowed to change directly.
       const locked = new Set([
         'PR_ID', 'Timestamp', 'Date_of_Requisition',

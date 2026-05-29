@@ -169,10 +169,12 @@ export default function PRDetail() {
               </>
             ) : (
               <>
-                <button onClick={startEdit}
-                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
-                  Edit
-                </button>
+                {pr.Status_Code === 'PR_SUBMITTED' && (
+                  <button onClick={startEdit}
+                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
+                    Edit
+                  </button>
+                )}
                 {canApprove && (
                   <button onClick={() => setShowModal(true)}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">
