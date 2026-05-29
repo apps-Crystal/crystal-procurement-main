@@ -36,7 +36,7 @@ function NewPOInner() {
     setError('');
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('folder', '0AJXaA2mXF4XgUk9PVA');
+    fd.append('folder', '1jzqL2K4TB527pqoXD3xMsz9f3liAdQpk');
     // Temporary name; server renames to PO_{site}_{po_id} after creation.
     const site = prData?.pr?.Site || 'UNKNOWN';
     fd.append('prefix', `PO_DRAFT_${site}`);
