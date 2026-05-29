@@ -24,8 +24,38 @@ function NewPOInner() {
     remarks: '',
   });
   const [items, setItems] = useState<any[]>([]);
+  const [poPdfUrl, setPoPdfUrl] = useState('');
+  const [poPdfId, setPoPdfId] = useState('');
+  const [poPdfName, setPoPdfName] = useState('');
+  const [uploadingPdf, setUploadingPdf] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  async function uploadPoPdf(file: File) {
+    setUploadingPdf(true);
+    setError('');
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', '0AJXaA2mXF4XgUk9PVA');
+    // Temporary name; server renames to PO_{site}_{po_id} after creation.
+    const site = prData?.pr?.Site || 'UNKNOWN';
+    fd.append('prefix', `PO_DRAFT_${site}`);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Upload failed (${res.status})`);
+      setPoPdfUrl(data.url);
+      setPoPdfId(data.id);
+      setPoPdfName(file.name);
+    } catch (e: any) {
+      setError(`PO PDF upload failed: ${e.message}`);
+      setPoPdfUrl('');
+      setPoPdfId('');
+      setPoPdfName('');
+    } finally {
+      setUploadingPdf(false);
+    }
+  }
 
   useEffect(() => {
     if (!prId) return;
@@ -84,6 +114,7 @@ function NewPOInner() {
     if (!form.po_date) { setError('PO date is required'); return; }
     const validItems = items.filter(it => it.name.trim() && parseFloat(it.qty) > 0);
     if (validItems.length === 0) { setError('At least one item with qty is required'); return; }
+    if (uploadingPdf) { setError('Please wait for the PO PDF upload to finish'); return; }
     setSaving(true);
     setError('');
 
@@ -112,6 +143,8 @@ function NewPOInner() {
           line_no: i + 1,
         })),
         created_by: 'Yatish Agarwal',
+        po_pdf_url: poPdfUrl,
+        po_pdf_file_id: poPdfId,
       }),
     });
     const data = await res.json();
@@ -207,6 +240,31 @@ function NewPOInner() {
               <textarea value={form.remarks} onChange={e => set('remarks', e.target.value)} rows={2}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300 resize-none"
                 placeholder="Additional instructions or notes..." />
+            </div>
+            <div className="col-span-1 sm:col-span-2 lg:col-span-3">
+              <label className="block text-xs text-gray-500 mb-1">PO PDF</label>
+              {!poPdfUrl && !uploadingPdf && (
+                <label className="flex items-center gap-2 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-pointer hover:border-indigo-300 hover:text-indigo-600 max-w-sm">
+                  <span>Choose PO PDF...</span>
+                  <input type="file" accept=".pdf" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadPoPdf(f); }} />
+                </label>
+              )}
+              {uploadingPdf && (
+                <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 max-w-sm">
+                  <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <span>Uploading...</span>
+                </div>
+              )}
+              {poPdfUrl && !uploadingPdf && (
+                <div className="flex items-center justify-between gap-2 border border-green-200 bg-green-50 rounded-lg px-3 py-2 text-sm max-w-sm">
+                  <a href={poPdfUrl} target="_blank" rel="noreferrer" className="text-green-700 hover:underline truncate">
+                    ✓ {poPdfName || 'PO PDF uploaded'}
+                  </a>
+                  <button type="button" onClick={() => { setPoPdfUrl(''); setPoPdfId(''); setPoPdfName(''); }}
+                    className="text-xs text-gray-400 hover:text-red-500">✕</button>
+                </div>
+              )}
             </div>
           </div>
         </Section>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Readable } from 'stream';
 import { getDrive } from '@/lib/sheets';
 
-// Crystal Procurement → PR Documents folder
+// Crystal Procurement → PR Documents folder (default)
 const FOLDER_ID = '1sW3_RPzRUNSCODlyQkPRFVIAsD3LcnDG';
 
 export async function POST(req: NextRequest) {
@@ -13,10 +13,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    const folder = (formData.get('folder') as string | null) || FOLDER_ID;
+    const explicitName = (formData.get('filename') as string | null) || '';
     const prefix = (formData.get('prefix') as string | null) || '';
-    const safeName = prefix
-      ? `${prefix}__${Date.now()}__${file.name}`
-      : `${Date.now()}__${file.name}`;
+    const safeName = explicitName
+      ? explicitName
+      : prefix
+        ? `${prefix}__${Date.now()}__${file.name}`
+        : `${Date.now()}__${file.name}`;
 
     const drive = await getDrive();
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -25,7 +29,7 @@ export async function POST(req: NextRequest) {
     const created = await drive.files.create({
       requestBody: {
         name: safeName,
-        parents: [FOLDER_ID],
+        parents: [folder],
       },
       media: {
         mimeType: file.type || 'application/octet-stream',

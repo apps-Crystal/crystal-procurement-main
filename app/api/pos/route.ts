@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSheet, rowsToObjects, writeNewRow, getNextId } from '@/lib/sheets';
+import { readSheet, rowsToObjects, writeNewRow, getNextId, getDrive } from '@/lib/sheets';
 
 export async function GET(req: NextRequest) {
   try {
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { pr_id, site, vendor_id, vendor_name, tally_no, po_date, payment_terms,
       delivery_terms, expected_delivery_date, remarks, freight_amount, installation_amount,
-      items, created_by } = body;
+      items, created_by, po_pdf_url, po_pdf_file_id } = body;
 
     const now = new Date();
     const month = now.toLocaleString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' })
@@ -70,6 +70,28 @@ export async function POST(req: NextRequest) {
     const counter = await getNextId('PO', site, month);
     const po_id = `PO-${site}-${month}/${counter}`;
     const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    // Rename the uploaded PO PDF in Drive to embed PO_ID + Site in the name.
+    // Best-effort: failure here should not block the PO creation.
+    let finalPdfUrl = po_pdf_url || '';
+    if (po_pdf_file_id) {
+      try {
+        const drive = await getDrive();
+        const meta = await drive.files.get({ fileId: po_pdf_file_id, fields: 'name', supportsAllDrives: true });
+        const origName = meta.data.name || '';
+        const dotIdx = origName.lastIndexOf('.');
+        const ext = dotIdx > -1 ? origName.slice(dotIdx) : '';
+        const safePoId = po_id.replace(/[\\/]/g, '-');
+        const newName = `PO_${site}_${safePoId}${ext}`;
+        await drive.files.update({
+          fileId: po_pdf_file_id,
+          requestBody: { name: newName },
+          supportsAllDrives: true,
+        });
+      } catch (renameErr) {
+        console.warn('PO PDF rename failed (continuing):', renameErr);
+      }
+    }
 
     const totalIncGST = items?.reduce((sum: number, item: any) => {
       const rate = parseFloat(item.rate) || 0;
@@ -103,6 +125,8 @@ export async function POST(req: NextRequest) {
       Has_Installation: installation_amount ? 'Yes' : 'No',
       Installation_Amount: installation_amount || 0,
       Vendor_Company_Name: vendor_name || '',
+      PO_FileId: po_pdf_file_id || '',
+      PO_File_URL: finalPdfUrl,
     };
 
     const poRow = headers.length > 0
