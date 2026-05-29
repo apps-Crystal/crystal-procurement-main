@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       Expected_Delivery_Date: expected_delivery_date || '',
       Total_Incl_GST: totalIncGST.toFixed(2),
       Status_Code: 'PO_POSTED',
-      Status_Label: 'PO Posted',
+      Status_Label: 'Posted',
       Created_By: created_by || '',
       Timestamp: timestamp,
       Remarks: remarks || '',
