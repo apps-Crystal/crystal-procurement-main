@@ -69,12 +69,12 @@ function PRListInner() {
     <div className="flex-1 flex flex-col">
       <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 flex items-center justify-between sticky top-0 z-10">
         <div className="font-semibold text-gray-800">
-          {urlStatus === 'PR_APPROVED' ? 'Pending PO' : 'Purchase Requests'}
+          {status === 'PR_APPROVED' ? 'Pending PO' : 'Purchase Requests'}
         </div>
         <div className="flex gap-2">
-          {urlStatus === 'PR_APPROVED' ? (
+          {status === 'PR_APPROVED' ? (
             <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
-          ) : ['PR_REJECTED', 'CANCELLED', 'ARCHIVED'].includes(urlStatus) ? null : (
+          ) : ['DRAFT', 'PR_REJECTED', 'CANCELLED', 'ARCHIVED'].includes(status) ? null : (
             <Link href="/prs/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PR</Link>
           )}
         </div>
