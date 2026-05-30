@@ -19,6 +19,8 @@ function POListInner() {
   const [status, setStatus] = useState(searchParams.get('status') || 'all');
   const [search, setSearch] = useState('');
   const urlStatus = searchParams.get('status') || 'all';
+  const pending = searchParams.get('pending');
+  const isPending = pending === '1' || pending === 'true';
 
   // Sync local status to URL when sidebar links change it
   useEffect(() => {
@@ -35,18 +37,21 @@ function POListInner() {
       .then(d => { setPOs(d.pos || []); setLoading(false); });
   }, [status, site]);
 
-  const filtered = pos.filter(po =>
-    !search || po.PO_ID?.toLowerCase().includes(search.toLowerCase()) ||
-    po.Vendor_Company_Name?.toLowerCase().includes(search.toLowerCase()) ||
-    po.Site?.toLowerCase().includes(search.toLowerCase()) ||
-    po.PR_ID?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = pos.filter(po => {
+    if (isPending && (parseInt(po.grn_count) || 0) > 0) return false;
+    return !search || po.PO_ID?.toLowerCase().includes(search.toLowerCase()) ||
+      po.Vendor_Company_Name?.toLowerCase().includes(search.toLowerCase()) ||
+      po.Site?.toLowerCase().includes(search.toLowerCase()) ||
+      po.PR_ID?.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="flex-1 flex flex-col">
       <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 flex items-center justify-between sticky top-0 z-10">
-        <div className="font-semibold text-gray-800">Purchase Orders</div>
-        {!['PO_POSTED', 'CANCELLED', 'ARCHIVED'].includes(status) && (
+        <div className="font-semibold text-gray-800">
+          {isPending ? 'Pending GRN' : 'Purchase Orders'}
+        </div>
+        {!isPending && !['PO_POSTED', 'CANCELLED', 'ARCHIVED'].includes(status) && (
           <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
         )}
       </div>

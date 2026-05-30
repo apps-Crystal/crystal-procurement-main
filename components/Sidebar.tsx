@@ -63,7 +63,7 @@ const nav: NavItem[] = [
     label: 'GRN',
     icon: '📦',
     children: [
-      { href: '/grns?status=Draft', label: 'Pending GRN', icon: '⏳' },
+      { href: '/pos?status=PO_POSTED&pending=1', label: 'Pending GRN', icon: '⏳' },
       { href: '/grns?status=Open', label: 'Approve GRN', icon: '✅' },
     ],
   },
