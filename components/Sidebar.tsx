@@ -49,7 +49,15 @@ const nav: NavItem[] = [
       { href: '/prs?mine=1', label: 'My Requests', icon: '👤' },
     ],
   },
-  { href: '/pos', label: 'Purchase Orders', icon: '📄' },
+  {
+    href: '/pos',
+    label: 'Purchase Orders',
+    icon: '📄',
+    children: [
+      { href: '/pos?status=PO_POSTED', label: 'Active PO', icon: '🚚' },
+      { href: '/prs?status=PR_APPROVED', label: 'Pending PO', icon: '⏳' },
+    ],
+  },
   { href: '/grns', label: 'GRN', icon: '📦' },
   { href: '/vendors', label: 'Vendors', icon: '🏢' },
 ];
