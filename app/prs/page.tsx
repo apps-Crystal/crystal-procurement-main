@@ -74,7 +74,7 @@ function PRListInner() {
         <div className="flex gap-2">
           {urlStatus === 'PR_APPROVED' ? (
             <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
-          ) : (
+          ) : ['PR_REJECTED', 'CANCELLED', 'ARCHIVED'].includes(urlStatus) ? null : (
             <Link href="/prs/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PR</Link>
           )}
         </div>
