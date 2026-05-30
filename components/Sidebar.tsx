@@ -58,7 +58,15 @@ const nav: NavItem[] = [
       { href: '/prs?status=PR_APPROVED', label: 'Pending PO', icon: '⏳' },
     ],
   },
-  { href: '/grns', label: 'GRN', icon: '📦' },
+  {
+    href: '/grns',
+    label: 'GRN',
+    icon: '📦',
+    children: [
+      { href: '/grns?status=Draft', label: 'Pending GRN', icon: '⏳' },
+      { href: '/grns?status=Open', label: 'Approve GRN', icon: '✅' },
+    ],
+  },
   { href: '/vendors', label: 'Vendors', icon: '🏢' },
 ];
 

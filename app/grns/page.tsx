@@ -25,6 +25,13 @@ function GRNListInner() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(searchParams.get('status') || 'all');
   const [search, setSearch] = useState('');
+  const urlStatus = searchParams.get('status') || 'all';
+
+  // Sync local status to URL when sidebar links change it
+  useEffect(() => {
+    if (urlStatus !== status) setStatus(urlStatus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlStatus]);
 
   useEffect(() => {
     setLoading(true);
