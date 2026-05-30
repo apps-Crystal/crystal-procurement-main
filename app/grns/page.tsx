@@ -52,8 +52,12 @@ function GRNListInner() {
   return (
     <div className="flex-1 flex flex-col">
       <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 flex items-center justify-between sticky top-0 z-10">
-        <div className="font-semibold text-gray-800">GRN</div>
-        <Link href="/grns/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New GRN</Link>
+        <div className="font-semibold text-gray-800">
+          {status === 'Open' ? 'Approve GRN' : 'GRN'}
+        </div>
+        {!['Open', 'Approved'].includes(status) && (
+          <Link href="/grns/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New GRN</Link>
+        )}
       </div>
 
       <div className="px-4 py-4 md:px-7 md:py-6 flex-1">
