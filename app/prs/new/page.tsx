@@ -7,6 +7,19 @@ const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Bhubaneswar', 'Dh
 const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
 const PROC_TYPES = ['Material', 'Service'];
 const DELIVERY_CHARGES = ['Included', 'Chargeable', 'Extra at Actuals'];
+const DELIVERY_LOCATIONS: { site: string; address: string }[] = [
+  { site: 'Noida',       address: 'CRPL Infra Pvt. Ltd., Plot No-2886, 2887, 2890K, 2891, 2892Kha, 2893, 2895ka, 2895, Dhoom Manikpur, Dadri, Greater Noida Ghaziabad, Gautambuddha Nagar, PIN Code: 203207, UP.' },
+  { site: 'Detroj',      address: 'CRPL Infra Pvt. Ltd., Apple Corporation, Plot P6/2, Prime Industrial & Logistic Hub, Near Ambica Polymer, Haryala, Kheda 387570, Gujarat' },
+  { site: 'Pune',        address: 'CRPL Infra Pvt. Ltd., Building No./Flat No.: B 309, Virwani Industrial Estate Goregaon, East W E HIGHWAY, Mumbai, Mumbai Suburban, Maharashtra, PIN Code: 400063' },
+  { site: 'Kheda',       address: 'CRPL Infra Pvt. Ltd., Apple Corporation, Plot P6/2, Prime Industrial & Logistic Hub, Near Ambica Polymer, Haryala, Kheda 387570, Gujarat' },
+  { site: 'Kolkata',     address: 'Geetanjali Apartment, 8B, Middleton St, Park Street area, Kolkata, West Bengal 700071' },
+  { site: 'Bhubaneswar', address: 'IDCO Plot no 40 & 41, Vill: Haridamada, Mendhasala, Sea Food park, Deras Tehsil. Bhubaneswar -752054' },
+  { site: 'Dhulagarh',   address: 'CRPL, A8 & A9, Sudharas, Foodpark, Sankrail, Dhulagarh, Howrah-711302, Landmark: Pepsi Gate, near Dhulagarh Toll Plaza' },
+  { site: 'Dankuni',     address: 'CRPL Infra Private Limited, Paharimata Warehousing, Shyam Business Park, On Durgapur Expressway, Mouja, Nizampur, PS Singur, Under Bora Grampanchayat, Dist Hooghly, Pincode 712306' },
+  { site: 'Mumbai',      address: '501- Synergy Business Park, Sahakar Wadi, off Aarey Road, ITT Bhatti, Hanuman Tekdi, Goregaon East, Mumbai, Maharashtra 400063' },
+  { site: 'Vavdi',       address: 'Amarnath Industrial Park, 1B Near National Highway No -8, Vavdi, Kheda Gujarat 387550' },
+  { site: 'Taloja',      address: 'B 05- B ESR Taloja Industrial at Village Ambernath, District Thane -421 306' },
+];
 const UOM_OPTIONS = [
   'KGS', 'PIECE', 'NOS', 'BOX', 'MTR', 'PKT', 'M3', 'SET', 'FT', 'LTR',
   'MM', 'PAIRS', 'RMT', 'ROLL', 'SQF', 'SQM', 'TROLLY', 'GRAM', 'BOTTLE',
@@ -280,7 +293,10 @@ export default function NewPR() {
               <select value={form.delivery_location} onChange={e => set('delivery_location', e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-300">
                 <option value="">Select delivery location...</option>
-                {SITES.map(s => <option key={s}>{s}</option>)}
+                {DELIVERY_LOCATIONS.map(loc => {
+                  const value = `${loc.site} — ${loc.address}`;
+                  return <option key={loc.site} value={value}>{value}</option>;
+                })}
               </select>
             </div>
             <div>
