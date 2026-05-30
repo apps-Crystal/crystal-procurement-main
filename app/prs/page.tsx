@@ -39,15 +39,24 @@ function PRListInner() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(searchParams.get('status') || 'all');
   const [search, setSearch] = useState('');
+  const urlStatus = searchParams.get('status') || 'all';
+  const mine = searchParams.get('mine');
+
+  // Sync local status to URL when sidebar links change it
+  useEffect(() => {
+    if (urlStatus !== status) setStatus(urlStatus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlStatus]);
 
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams({ status });
     if (site && site !== 'all') params.set('site', site);
+    if (mine === '1' || mine === 'true') params.set('mine', '1');
     fetch(`/api/prs?${params}`)
       .then(r => r.json())
       .then(d => { setPRs(d.prs || []); setLoading(false); });
-  }, [status, site]);
+  }, [status, site, mine]);
 
   const filtered = prs.filter(pr =>
     !search || pr.PR_ID?.toLowerCase().includes(search.toLowerCase()) ||

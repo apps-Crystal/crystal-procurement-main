@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const site = searchParams.get('site');
     const status = searchParams.get('status');
+    const mine = searchParams.get('mine');
 
     const rows = await readSheet('PR_Master');
     let prs = rowsToObjects(rows);
@@ -17,6 +18,20 @@ export async function GET(req: NextRequest) {
 
     if (site && site !== 'all') prs = prs.filter(p => p.Site === site);
     if (status && status !== 'all') prs = prs.filter(p => p.Status_Code === status);
+
+    if (mine === '1' || mine === 'true') {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        const myName = (currentUser.name || '').trim();
+        const myEmail = (currentUser.email || '').trim().toLowerCase();
+        prs = prs.filter(p => {
+          const raisedBy = (p.Requested_By || '').trim();
+          return raisedBy === myName || raisedBy.toLowerCase() === myEmail;
+        });
+      } else {
+        prs = [];
+      }
+    }
 
     // Add aging in days
     const now = Date.now();

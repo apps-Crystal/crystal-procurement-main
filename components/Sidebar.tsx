@@ -30,9 +30,25 @@ const SITES = [
   { label: 'Taloja', value: 'Taloja' },
 ];
 
-const nav = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+  children?: { href: string; label: string }[];
+}
+
+const nav: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: '⊞' },
-  { href: '/prs', label: 'Purchase Requests', icon: '📋', badge: null },
+  {
+    href: '/prs',
+    label: 'Purchase Requests',
+    icon: '📋',
+    children: [
+      { href: '/prs/new', label: 'New PR' },
+      { href: '/prs?status=PR_SUBMITTED', label: 'Approve PR' },
+      { href: '/prs?mine=1', label: 'My Requests' },
+    ],
+  },
   { href: '/pos', label: 'Purchase Orders', icon: '📄' },
   { href: '/grns', label: 'GRN', icon: '📦' },
   { href: '/vendors', label: 'Vendors', icon: '🏢' },
@@ -60,14 +76,26 @@ export default function Sidebar({ pendingPRs = 0, onClose }: { pendingPRs?: numb
           {nav.map(item => {
             const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
             return (
-              <Link key={item.href} href={item.href} onClick={() => onClose?.()}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all ${active ? 'bg-indigo-600 text-white font-medium' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
-                <span className="text-base">{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
-                {item.href === '/prs' && pendingPRs > 0 && (
-                  <span className="bg-indigo-500 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">{pendingPRs}</span>
+              <div key={item.href}>
+                <Link href={item.href} onClick={() => onClose?.()}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all ${active ? 'bg-indigo-600 text-white font-medium' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
+                  <span className="text-base">{item.icon}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.href === '/prs' && pendingPRs > 0 && (
+                    <span className="bg-indigo-500 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">{pendingPRs}</span>
+                  )}
+                </Link>
+                {item.children && active && (
+                  <div className="ml-7 mt-1 mb-1 space-y-0.5">
+                    {item.children.map(child => (
+                      <Link key={child.href} href={child.href} onClick={() => onClose?.()}
+                        className="block px-3 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all">
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </nav>
