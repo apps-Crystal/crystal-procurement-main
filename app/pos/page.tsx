@@ -51,7 +51,9 @@ function POListInner() {
         <div className="font-semibold text-gray-800">
           {isPending ? 'Pending GRN' : 'Purchase Orders'}
         </div>
-        {!isPending && !['PO_POSTED', 'CANCELLED', 'ARCHIVED'].includes(status) && (
+        {isPending ? (
+          <Link href="/grns/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New GRN</Link>
+        ) : !['PO_POSTED', 'CANCELLED', 'ARCHIVED'].includes(status) && (
           <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
         )}
       </div>
