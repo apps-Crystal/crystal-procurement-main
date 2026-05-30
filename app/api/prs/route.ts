@@ -192,8 +192,12 @@ export async function POST(req: NextRequest) {
         app_base_url: baseUrl,
       });
       // No await: don't block the response on the email round-trip.
-      sendEventEmail({ eventKey: 'PR_SUBMITTED', subject, html })
-        .catch(err => console.error('[email] PR_SUBMITTED failed:', err));
+      sendEventEmail({
+        eventKey: 'PR_SUBMITTED',
+        subject,
+        html,
+        extraTo: currentUser.email ? [currentUser.email] : [],
+      }).catch(err => console.error('[email] PR_SUBMITTED failed:', err));
     } catch (emailErr) {
       console.error('[email] PR_SUBMITTED prep failed:', emailErr);
     }

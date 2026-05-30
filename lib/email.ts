@@ -58,17 +58,34 @@ function getTransporter(): nodemailer.Transporter | null {
   return cachedTransporter;
 }
 
+function uniq(arr: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const a of arr) {
+    const key = a.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(a.trim());
+  }
+  return out;
+}
+
 export async function sendEventEmail(opts: {
   eventKey: string;
   subject: string;
   html: string;
+  extraTo?: string[];
+  extraCC?: string[];
+  extraBCC?: string[];
 }): Promise<void> {
   const cfg = await getEmailConfig(opts.eventKey);
   if (!cfg) {
     console.log(`[email] No enabled config for event ${opts.eventKey} — skipping`);
     return;
   }
-  const to = splitAddresses(cfg.Fixed_To);
+  const to  = uniq([...splitAddresses(cfg.Fixed_To),  ...(opts.extraTo  || [])]);
+  const cc  = uniq([...splitAddresses(cfg.Fixed_CC),  ...(opts.extraCC  || [])]);
+  const bcc = uniq([...splitAddresses(cfg.Fixed_BCC), ...(opts.extraBCC || [])]);
   if (to.length === 0) {
     console.warn(`[email] Event ${opts.eventKey} has no Fixed_To recipients`);
     return;
@@ -81,12 +98,12 @@ export async function sendEventEmail(opts: {
     await transporter.sendMail({
       from,
       to,
-      cc: splitAddresses(cfg.Fixed_CC),
-      bcc: splitAddresses(cfg.Fixed_BCC),
+      cc,
+      bcc,
       subject: opts.subject,
       html: opts.html,
     });
-    console.log(`[email] Sent ${opts.eventKey} to ${to.join(', ')}`);
+    console.log(`[email] Sent ${opts.eventKey} to ${to.join(', ')}${cc.length ? ' cc=' + cc.join(',') : ''}`);
   } catch (err) {
     console.error(`[email] Send failed for ${opts.eventKey}:`, err);
   }
