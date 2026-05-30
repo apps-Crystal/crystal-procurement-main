@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSheet, rowsToObjects, writeNewRow, getNextId } from '@/lib/sheets';
 import { getCurrentUser } from '@/lib/current-user';
+import { sendEventEmail, buildPrSubmittedEmail } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
   try {
@@ -153,6 +154,33 @@ export async function POST(req: NextRequest) {
         pr_id, i + 1, item.name, item.purpose || '', qty,
         item.uom, rate, gst, item.warranty || '', lineTotal.toFixed(2),
       ]);
+    }
+
+    // Fire-and-forget email notification. A failure here must not break PR creation.
+    try {
+      const baseUrl =
+        process.env.APP_BASE_URL ||
+        (req.headers.get('x-forwarded-proto') && req.headers.get('host')
+          ? `${req.headers.get('x-forwarded-proto')}://${req.headers.get('host')}`
+          : '');
+      const { subject, html } = buildPrSubmittedEmail({
+        pr_id,
+        site,
+        category,
+        procurement_type: procurement_type || '',
+        requested_by: raised_by,
+        vendor_id: vendor_id || '',
+        pr_purpose: purpose || '',
+        total_incl_gst: totalIncGST.toFixed(2),
+        expected_delivery: expected_delivery || '',
+        payment_terms: specific_payment_terms || paymentSummary || '',
+        app_base_url: baseUrl,
+      });
+      // No await: don't block the response on the email round-trip.
+      sendEventEmail({ eventKey: 'PR_SUBMITTED', subject, html })
+        .catch(err => console.error('[email] PR_SUBMITTED failed:', err));
+    } catch (emailErr) {
+      console.error('[email] PR_SUBMITTED prep failed:', emailErr);
     }
 
     return NextResponse.json({ pr_id, success: true });
