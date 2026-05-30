@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSheet, rowsToObjects, findRowIndex, updateRow } from '@/lib/sheets';
 import { getCurrentUser } from '@/lib/current-user';
+import { sendEventEmail, buildPrApprovedEmail } from '@/lib/email';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -108,6 +109,43 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     await updateRow(`PR_Master!A${rowIdx}`, row);
+
+    // Email on approval. Lookup the raiser's email from Requested_By field, plus extras.
+    if (action === 'approve') {
+      try {
+        const idxOf = (col: string) => headers.indexOf(col);
+        const updatedPr = {
+          pr_id: decodedId,
+          site: String(row[idxOf('Site')] || ''),
+          category: String(row[idxOf('Purchase_Category')] || ''),
+          requested_by: String(row[idxOf('Requested_By')] || ''),
+          approved_by: approver,
+          approved_at: now,
+          approver_remarks: remarks || '',
+          total_incl_gst: String(row[idxOf('Total_Incl_GST')] || ''),
+          vendor_id: String(row[idxOf('Vendor_ID')] || ''),
+        };
+        const baseUrl =
+          process.env.APP_BASE_URL ||
+          (req.headers.get('x-forwarded-proto') && req.headers.get('host')
+            ? `${req.headers.get('x-forwarded-proto')}://${req.headers.get('host')}`
+            : '');
+        const { subject, html } = buildPrApprovedEmail({ ...updatedPr, app_base_url: baseUrl });
+        // Try to derive the requester's email from a few common columns
+        const requesterEmailRaw =
+          (idxOf('Requested_By_Email') >= 0 ? String(row[idxOf('Requested_By_Email')] || '') : '') ||
+          (updatedPr.requested_by.includes('@') ? updatedPr.requested_by : '');
+        sendEventEmail({
+          eventKey: 'PR_APPROVED',
+          subject,
+          html,
+          extraTo: requesterEmailRaw ? [requesterEmailRaw] : [],
+        }).catch(err => console.error('[email] PR_APPROVED failed:', err));
+      } catch (emailErr) {
+        console.error('[email] PR_APPROVED prep failed:', emailErr);
+      }
+    }
+
     return NextResponse.json({ success: true, status: statusMap[action][0] });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

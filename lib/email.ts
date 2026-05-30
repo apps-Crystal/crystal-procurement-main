@@ -114,6 +114,74 @@ function row(label: string, value: any): string {
   return `<tr><td style="padding:6px 12px;color:#64748b;font-size:13px;border-bottom:1px solid #f1f5f9;">${label}</td><td style="padding:6px 12px;color:#0f172a;font-size:13px;border-bottom:1px solid #f1f5f9;font-weight:500;">${String(value)}</td></tr>`;
 }
 
+function shell(headerLabel: string, headerColor: string, title: string, subtitle: string, tableRows: string, link: string, ctaLabel: string): string {
+  return `
+<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;">
+  <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e2e8f0;">
+    <div style="font-size:11px;color:${headerColor};letter-spacing:1px;font-weight:bold;margin-bottom:8px;">${headerLabel}</div>
+    <div style="font-size:20px;font-weight:bold;color:#0f172a;font-family:monospace;">${title}</div>
+    <div style="font-size:14px;color:#475569;margin-top:4px;">${subtitle}</div>
+    <table style="width:100%;border-collapse:collapse;margin-top:20px;">${tableRows}</table>
+    ${link ? `<div style="margin-top:24px;"><a href="${link}" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">${ctaLabel}</a></div>` : ''}
+  </div>
+  <div style="text-align:center;font-size:11px;color:#94a3b8;margin-top:16px;">Crystal Group &middot; Procurement Portal</div>
+</div>`;
+}
+
+export function buildPrApprovedEmail(pr: {
+  pr_id: string;
+  site: string;
+  category: string;
+  requested_by: string;
+  approved_by: string;
+  approved_at: string;
+  approver_remarks?: string;
+  total_incl_gst?: string;
+  vendor_name?: string;
+  vendor_id?: string;
+  app_base_url?: string;
+}): { subject: string; html: string } {
+  const subject = `[Procurement] PR Approved — ${pr.pr_id}`;
+  const link = pr.app_base_url ? `${pr.app_base_url.replace(/\/$/, '')}/prs/${encodeURIComponent(pr.pr_id)}` : '';
+  const rows = [
+    row('Approved By', pr.approved_by),
+    row('Approved At', pr.approved_at),
+    row('Site', pr.site),
+    row('Category', pr.category),
+    row('Vendor', pr.vendor_name || pr.vendor_id),
+    row('Raised By', pr.requested_by),
+    pr.total_incl_gst ? row('Total (incl. GST)', `&#8377;${pr.total_incl_gst}`) : '',
+    pr.approver_remarks ? row('Remarks', pr.approver_remarks) : '',
+  ].join('');
+  return { subject, html: shell('PR APPROVED', '#16a34a', pr.pr_id, `${pr.site} &middot; ${pr.category} &middot; Raised by ${pr.requested_by}`, rows, link, 'View PR &rarr;') };
+}
+
+export function buildPoCreatedEmail(po: {
+  po_id: string;
+  pr_id: string;
+  site: string;
+  vendor_name?: string;
+  vendor_id?: string;
+  po_date: string;
+  total_incl_gst: string;
+  created_by: string;
+  expected_delivery?: string;
+  app_base_url?: string;
+}): { subject: string; html: string } {
+  const subject = `[Procurement] PO Created — ${po.po_id} (${po.site})`;
+  const link = po.app_base_url ? `${po.app_base_url.replace(/\/$/, '')}/pos/${encodeURIComponent(po.po_id)}` : '';
+  const rows = [
+    row('From PR', po.pr_id),
+    row('PO Date', po.po_date),
+    row('Site', po.site),
+    row('Vendor', po.vendor_name || po.vendor_id),
+    row('Created By', po.created_by),
+    row('Expected Delivery', po.expected_delivery),
+    row('Total (incl. GST)', `&#8377;${po.total_incl_gst}`),
+  ].join('');
+  return { subject, html: shell('NEW PURCHASE ORDER', '#6366f1', po.po_id, `${po.site} &middot; ${po.vendor_name || po.vendor_id || ''}`, rows, link, 'View PO &rarr;') };
+}
+
 export function buildPrSubmittedEmail(pr: {
   pr_id: string;
   site: string;

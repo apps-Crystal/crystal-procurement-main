@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSheet, rowsToObjects, writeNewRow, getNextId, getDrive } from '@/lib/sheets';
 import { getCurrentUser } from '@/lib/current-user';
+import { sendEventEmail, buildPoCreatedEmail } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
   try {
@@ -164,6 +165,35 @@ export async function POST(req: NextRequest) {
       row[prHeaders.indexOf('Last_Action_By')] = created_by;
       row[prHeaders.indexOf('Last_Action_At')] = timestamp;
       await updateRow(`PR_Master!A${rowIdx}`, row);
+    }
+
+    // Fire-and-forget PO_CREATED email
+    try {
+      const baseUrl =
+        process.env.APP_BASE_URL ||
+        (req.headers.get('x-forwarded-proto') && req.headers.get('host')
+          ? `${req.headers.get('x-forwarded-proto')}://${req.headers.get('host')}`
+          : '');
+      const { subject, html } = buildPoCreatedEmail({
+        po_id,
+        pr_id,
+        site,
+        vendor_name,
+        vendor_id,
+        po_date,
+        total_incl_gst: totalIncGST.toFixed(2),
+        created_by,
+        expected_delivery: expected_delivery_date || '',
+        app_base_url: baseUrl,
+      });
+      sendEventEmail({
+        eventKey: 'PO_CREATED',
+        subject,
+        html,
+        extraTo: currentUser.email ? [currentUser.email] : [],
+      }).catch(err => console.error('[email] PO_CREATED failed:', err));
+    } catch (emailErr) {
+      console.error('[email] PO_CREATED prep failed:', emailErr);
     }
 
     return NextResponse.json({ po_id, success: true });
