@@ -34,7 +34,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: string;
-  children?: { href: string; label: string }[];
+  children?: { href: string; label: string; icon: string }[];
 }
 
 const nav: NavItem[] = [
@@ -44,9 +44,9 @@ const nav: NavItem[] = [
     label: 'Purchase Requests',
     icon: '📋',
     children: [
-      { href: '/prs/new', label: 'New PR' },
-      { href: '/prs?status=PR_SUBMITTED', label: 'Approve PR' },
-      { href: '/prs?mine=1', label: 'My Requests' },
+      { href: '/prs/new', label: 'New PR', icon: '➕' },
+      { href: '/prs?status=PR_SUBMITTED', label: 'Approve PR', icon: '✅' },
+      { href: '/prs?mine=1', label: 'My Requests', icon: '👤' },
     ],
   },
   { href: '/pos', label: 'Purchase Orders', icon: '📄' },
@@ -89,8 +89,9 @@ export default function Sidebar({ pendingPRs = 0, onClose }: { pendingPRs?: numb
                   <div className="ml-7 mt-1 mb-1 space-y-0.5">
                     {item.children.map(child => (
                       <Link key={child.href} href={child.href} onClick={() => onClose?.()}
-                        className="block px-3 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all">
-                        {child.label}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+                        <span className="text-sm">{child.icon}</span>
+                        <span>{child.label}</span>
                       </Link>
                     ))}
                   </div>
