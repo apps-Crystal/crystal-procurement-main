@@ -62,6 +62,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       setCol('Approved_By_Email', actorEmail);
       setCol('Approved_At', now);
       setCol('Approver_Remarks', remarks || '');
+    } else if (action === 'reject') {
+      setCol('Status', 'Rejected');
+      setCol('Rejected_By', actorName);
+      setCol('Rejected_By_Name', actorName);
+      setCol('Rejected_By_Email', actorEmail);
+      setCol('Rejected_At', now);
+      setCol('Rejection_Reason', remarks || '');
+      setCol('Approver_Remarks', remarks || '');
     } else if (action === 'flag') {
       setCol('Status', 'Flagged');
       setCol('Flag_Status', 'Flagged');

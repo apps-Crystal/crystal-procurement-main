@@ -14,6 +14,7 @@ const STATUS_BADGE: Record<string, string> = {
   Open: 'bg-blue-100 text-blue-700',
   Approved: 'bg-green-100 text-green-700',
   Flagged: 'bg-red-100 text-red-700',
+  Rejected: 'bg-red-100 text-red-700',
 };
 
 const CONDITION_COLOR: Record<string, string> = {
@@ -27,7 +28,7 @@ export default function GRNDetail() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [modalAction, setModalAction] = useState<'approve' | 'flag'>('approve');
+  const [modalAction, setModalAction] = useState<'approve' | 'flag' | 'reject'>('approve');
   const [remarks, setRemarks] = useState('');
   const [acting, setActing] = useState(false);
 
@@ -76,20 +77,31 @@ export default function GRNDetail() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-7 max-w-md w-full mx-4 shadow-2xl">
             <div className="font-semibold text-lg mb-1">
-              {modalAction === 'approve' ? 'Approve GRN' : 'Flag GRN'}
+              {modalAction === 'approve' ? 'Approve GRN' : modalAction === 'reject' ? 'Reject GRN' : 'Flag GRN'}
             </div>
             <div className="text-sm text-gray-400 mb-4 font-mono">{grn.GRN_ID}</div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              {modalAction === 'flag' ? 'Flag Reason (required)' : 'Remarks (optional)'}
+              {modalAction === 'flag'
+                ? 'Flag Reason (required)'
+                : modalAction === 'reject'
+                  ? 'Rejection Reason (required)'
+                  : 'Remarks (optional)'}
             </label>
             <textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={3}
               className="w-full border border-gray-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-indigo-300"
-              placeholder={modalAction === 'flag' ? 'Describe the issue...' : 'Optional remarks...'} />
+              placeholder={
+                modalAction === 'flag' ? 'Describe the issue...'
+                : modalAction === 'reject' ? 'Why is this GRN being rejected?'
+                : 'Optional remarks...'} />
             <div className="flex gap-2 mt-5 justify-end">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
-              <button onClick={doAction} disabled={acting || (modalAction === 'flag' && !remarks.trim())}
+              <button onClick={doAction} disabled={acting || ((modalAction === 'flag' || modalAction === 'reject') && !remarks.trim())}
                 className={`px-4 py-2 text-white rounded-lg text-sm font-semibold disabled:opacity-50 ${modalAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                {acting ? 'Saving...' : modalAction === 'approve' ? 'Approve GRN' : 'Flag GRN'}
+                {acting
+                  ? 'Saving...'
+                  : modalAction === 'approve' ? 'Approve GRN'
+                  : modalAction === 'reject' ? 'Reject GRN'
+                  : 'Flag GRN'}
               </button>
             </div>
           </div>
@@ -123,6 +135,12 @@ export default function GRNDetail() {
               <button onClick={() => { setModalAction('flag'); setShowModal(true); }}
                 className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50">
                 Flag
+              </button>
+            )}
+            {canApprove && (
+              <button onClick={() => { setModalAction('reject'); setShowModal(true); }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700">
+                Reject
               </button>
             )}
             {canApprove && (
