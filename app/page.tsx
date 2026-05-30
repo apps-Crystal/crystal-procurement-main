@@ -65,11 +65,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 sticky top-0 z-10">
         <div className="font-semibold text-gray-800">Dashboard</div>
-        <Link href="/prs/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-          + New PR
-        </Link>
       </div>
 
       <div className="flex-1 px-4 py-4 md:px-7 md:py-6 space-y-5">
