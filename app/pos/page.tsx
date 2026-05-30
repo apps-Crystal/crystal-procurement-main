@@ -46,7 +46,9 @@ function POListInner() {
     <div className="flex-1 flex flex-col">
       <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-7 md:py-3.5 flex items-center justify-between sticky top-0 z-10">
         <div className="font-semibold text-gray-800">Purchase Orders</div>
-        <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
+        {!['CANCELLED', 'ARCHIVED'].includes(status) && (
+          <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
+        )}
       </div>
 
       <div className="px-4 py-4 md:px-7 md:py-6 flex-1">
