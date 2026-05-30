@@ -72,10 +72,11 @@ function PRListInner() {
           {urlStatus === 'PR_APPROVED' ? 'Pending PO' : 'Purchase Requests'}
         </div>
         <div className="flex gap-2">
-          {urlStatus === 'PR_APPROVED' && (
+          {urlStatus === 'PR_APPROVED' ? (
             <Link href="/pos/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PO</Link>
+          ) : (
+            <Link href="/prs/new" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">+ New PR</Link>
           )}
-          <Link href="/prs/new" className={`text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${urlStatus === 'PR_APPROVED' ? 'border border-indigo-200 text-indigo-700 hover:bg-indigo-50' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>+ New PR</Link>
         </div>
       </div>
 
