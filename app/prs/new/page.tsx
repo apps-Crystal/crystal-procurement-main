@@ -7,10 +7,15 @@ const SITES = ['Noida', 'Detroj', 'Pune', 'Kheda', 'Kolkata', 'Bhubaneswar', 'Dh
 const CATEGORIES = ['Maintenance Capex', 'Operations Capex', 'Project/Site Capex', 'Service', 'Consumables', 'Assets'];
 const PROC_TYPES = ['Material', 'Service'];
 const DELIVERY_CHARGES = ['Included', 'Chargeable', 'Extra at Actuals'];
+const UOM_OPTIONS = [
+  'KGS', 'PIECE', 'NOS', 'BOX', 'MTR', 'PKT', 'M3', 'SET', 'FT', 'LTR',
+  'MM', 'PAIRS', 'RMT', 'ROLL', 'SQF', 'SQM', 'TROLLY', 'GRAM', 'BOTTLE',
+  'BAGS', 'RFT', 'MT', 'OTHER',
+];
 
 let _itemId = 0;
-function newItem() { return { _id: ++_itemId, item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' }; }
-const EMPTY_ITEM = { item_name: '', purpose: '', qty: '', uom: '', rate: '', gst: '18' };
+function newItem() { return { _id: ++_itemId, item_name: '', qty: '', uom: '', rate: '', gst: '18' }; }
+const EMPTY_ITEM = { item_name: '', qty: '', uom: '', rate: '', gst: '18' };
 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -175,7 +180,6 @@ export default function NewPR() {
         items: items.filter(it => it.item_name.trim()).map((it, i) => ({
           line_no: i + 1,
           name: it.item_name,
-          purpose: it.purpose,
           qty: it.qty,
           uom: it.uom,
           rate: it.rate,
@@ -473,9 +477,8 @@ export default function NewPR() {
                 <tr className="border-b border-gray-100 text-xs text-gray-400">
                   <th className="text-left pb-2">#</th>
                   <th className="text-left pb-2 min-w-48">Item Name <span className="text-red-400">*</span></th>
-                  <th className="text-left pb-2 min-w-32">Purpose</th>
                   <th className="text-right pb-2">Qty</th>
-                  <th className="text-left pb-2 pl-2 min-w-20">UOM</th>
+                  <th className="text-left pb-2 pl-2 min-w-24">UOM</th>
                   <th className="text-right pb-2 min-w-28">Rate (₹)</th>
                   <th className="text-right pb-2">GST %</th>
                   <th className="text-right pb-2 min-w-28">Total</th>
@@ -494,18 +497,15 @@ export default function NewPR() {
                           placeholder="Item description..." />
                       </td>
                       <td className="py-2 pr-2">
-                        <input value={item.purpose} onChange={e => setItem(idx, 'purpose', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300"
-                          placeholder="For..." />
-                      </td>
-                      <td className="py-2 pr-2">
                         <input type="number" min="0" value={item.qty} onChange={e => setItem(idx, 'qty', e.target.value)}
                           className="border border-gray-200 rounded px-2 py-1 text-sm w-20 text-right focus:outline-none focus:border-indigo-300" />
                       </td>
                       <td className="py-2 pr-2 pl-2">
-                        <input value={item.uom} onChange={e => setItem(idx, 'uom', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:border-indigo-300"
-                          placeholder="Nos/Kg/m..." />
+                        <select value={item.uom} onChange={e => setItem(idx, 'uom', e.target.value)}
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-24 focus:outline-none focus:border-indigo-300">
+                          <option value="">UOM...</option>
+                          {UOM_OPTIONS.map(u => <option key={u}>{u}</option>)}
+                        </select>
                       </td>
                       <td className="py-2 pr-2">
                         <input type="number" min="0" value={item.rate} onChange={e => setItem(idx, 'rate', e.target.value)}
@@ -531,14 +531,14 @@ export default function NewPR() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={9} className="pt-3">
+                  <td colSpan={8} className="pt-3">
                     <button type="button" onClick={addItem}
                       className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ Add Item</button>
                   </td>
                 </tr>
                 {form.delivery_charges === 'Chargeable' && (
                   <tr>
-                    <td colSpan={7} className="pt-3 text-right font-medium text-sm text-gray-600">Delivery Charges</td>
+                    <td colSpan={6} className="pt-3 text-right font-medium text-sm text-gray-600">Delivery Charges</td>
                     <td className="pt-3 pr-2">
                       <div className="relative">
                         <input type="number" min="0" value={form.delivery_charge_amount} onChange={e => set('delivery_charge_amount', e.target.value)}
@@ -551,7 +551,7 @@ export default function NewPR() {
                   </tr>
                 )}
                 <tr className="border-t-2 border-gray-200">
-                  <td colSpan={7} className="pt-3 text-right font-semibold text-sm">
+                  <td colSpan={6} className="pt-3 text-right font-semibold text-sm">
                     Grand Total ({form.delivery_charges === 'Chargeable' ? 'incl. GST + Delivery' : 'incl. GST'})
                   </td>
                   <td className="pt-3 text-right font-bold text-base pr-2">
