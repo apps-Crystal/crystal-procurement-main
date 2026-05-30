@@ -488,16 +488,26 @@ export default function NewPR() {
         {/* Line Items */}
         <Section title="Line Items">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '36px' }} />
+                <col />
+                <col style={{ width: '80px' }} />
+                <col style={{ width: '100px' }} />
+                <col style={{ width: '120px' }} />
+                <col style={{ width: '70px' }} />
+                <col style={{ width: '110px' }} />
+                <col style={{ width: '32px' }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-gray-100 text-xs text-gray-400">
                   <th className="text-left pb-2">#</th>
-                  <th className="text-left pb-2 min-w-48">Item Name <span className="text-red-400">*</span></th>
-                  <th className="text-right pb-2">Qty</th>
-                  <th className="text-left pb-2 pl-2 min-w-24">UOM</th>
-                  <th className="text-right pb-2 min-w-28">Rate (₹)</th>
-                  <th className="text-right pb-2">GST %</th>
-                  <th className="text-right pb-2 min-w-28">Total</th>
+                  <th className="text-left pb-2 pr-2">Item Name <span className="text-red-400">*</span></th>
+                  <th className="text-right pb-2 pr-2">Qty</th>
+                  <th className="text-left pb-2 pr-2">UOM</th>
+                  <th className="text-right pb-2 pr-2">Rate (₹)</th>
+                  <th className="text-right pb-2 pr-2">GST %</th>
+                  <th className="text-right pb-2 pr-2">Total</th>
                   <th className="pb-2" />
                 </tr>
               </thead>
@@ -506,7 +516,7 @@ export default function NewPR() {
                   const total = lineTotal(item);
                   return (
                     <tr key={item._id} className="border-b border-gray-50">
-                      <td className="py-2 text-gray-400 text-xs pr-2">{idx + 1}</td>
+                      <td className="py-2 text-gray-400 text-xs">{idx + 1}</td>
                       <td className="py-2 pr-2">
                         <input value={item.item_name} onChange={e => setItem(idx, 'item_name', e.target.value)}
                           className="border border-gray-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300"
@@ -514,22 +524,22 @@ export default function NewPR() {
                       </td>
                       <td className="py-2 pr-2">
                         <input type="number" min="0" value={item.qty} onChange={e => setItem(idx, 'qty', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-sm w-20 text-right focus:outline-none focus:border-indigo-300" />
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full text-right focus:outline-none focus:border-indigo-300" />
                       </td>
-                      <td className="py-2 pr-2 pl-2">
+                      <td className="py-2 pr-2">
                         <select value={item.uom} onChange={e => setItem(idx, 'uom', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-sm w-24 focus:outline-none focus:border-indigo-300">
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300">
                           <option value="">UOM...</option>
                           {UOM_OPTIONS.map(u => <option key={u}>{u}</option>)}
                         </select>
                       </td>
                       <td className="py-2 pr-2">
                         <input type="number" min="0" value={item.rate} onChange={e => setItem(idx, 'rate', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-sm w-32 text-right focus:outline-none focus:border-indigo-300" />
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full text-right focus:outline-none focus:border-indigo-300" />
                       </td>
                       <td className="py-2 pr-2">
                         <select value={item.gst} onChange={e => setItem(idx, 'gst', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:border-indigo-300">
+                          className="border border-gray-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-300">
                           {['0', '5', '12', '18', '28'].map(g => <option key={g}>{g}</option>)}
                         </select>
                       </td>
