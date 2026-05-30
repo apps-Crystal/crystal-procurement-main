@@ -13,6 +13,8 @@ function NewPOInner() {
 
   const [prData, setPRData] = useState<any>(null);
   const [loading, setLoading] = useState(!!prId);
+  const [approvedPrs, setApprovedPrs] = useState<any[]>([]);
+  const [pickerLoading, setPickerLoading] = useState(false);
   const [form, setForm] = useState({
     tally_no: '',
     po_date: new Date().toISOString().split('T')[0],
@@ -81,6 +83,16 @@ function NewPOInner() {
         }
         setLoading(false);
       });
+  }, [prId]);
+
+  // When no PR is preselected, load approved PRs (no PO yet) so user can pick one
+  useEffect(() => {
+    if (prId) return;
+    setPickerLoading(true);
+    fetch('/api/prs?status=PR_APPROVED')
+      .then(r => r.json())
+      .then(d => { setApprovedPrs(d.prs || []); setPickerLoading(false); })
+      .catch(() => setPickerLoading(false));
   }, [prId]);
 
   function set(field: string, value: string) {
@@ -172,6 +184,32 @@ function NewPOInner() {
 
       <form onSubmit={submit} className="px-4 py-4 md:px-7 md:py-6 space-y-4 max-w-5xl">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
+
+        {/* PR Picker — shown when no ?pr= param was passed */}
+        {!pr && !prId && (
+          <div className="bg-white rounded-xl border border-gray-100 p-5">
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Select Approved PR</div>
+            {pickerLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <span>Loading approved PRs...</span>
+              </div>
+            ) : approvedPrs.length === 0 ? (
+              <div className="text-sm text-gray-400">No approved PRs awaiting PO creation.</div>
+            ) : (
+              <select onChange={e => { if (e.target.value) router.push(`/pos/new?pr=${encodeURIComponent(e.target.value)}`); }}
+                defaultValue=""
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full max-w-md focus:outline-none focus:border-indigo-300">
+                <option value="">Pick a PR to base this PO on...</option>
+                {approvedPrs.map((p: any) => (
+                  <option key={p.PR_ID} value={p.PR_ID}>
+                    {p.PR_ID} · {p.Site} · {p.Purchase_Category} · ₹{parseFloat(String(p.Total_Incl_GST || '0').replace(/[₹,]/g,'')).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
 
         {/* PR Summary */}
         {pr && (
